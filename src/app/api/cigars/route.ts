@@ -8,77 +8,50 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const brand = searchParams.get('brand');
     const strength = searchParams.get('strength');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
+    const retailer = searchParams.get('retailer');
+    const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : null;
+    const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : null;
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '24');
-
     const offset = (page - 1) * limit;
+    const searchTerm = search ? `%${search}%` : null;
 
-    // Build WHERE conditions
-    const conditions = ['available = true'];
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (brand) {
-      conditions.push(`brand = $${paramIndex}`);
-      params.push(brand);
-      paramIndex++;
-    }
-
-    if (strength) {
-      conditions.push(`strength = $${paramIndex}`);
-      params.push(strength);
-      paramIndex++;
-    }
-
-    if (minPrice) {
-      conditions.push(`price >= $${paramIndex}`);
-      params.push(parseFloat(minPrice));
-      paramIndex++;
-    }
-
-    if (maxPrice) {
-      conditions.push(`price <= $${paramIndex}`);
-      params.push(parseFloat(maxPrice));
-      paramIndex++;
-    }
-
-    if (search) {
-      conditions.push(`(name ILIKE $${paramIndex} OR brand ILIKE $${paramIndex + 1} OR description ILIKE $${paramIndex + 2})`);
-      const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
-      paramIndex += 3;
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as count FROM cs_cigars ${whereClause}`;
-    const countResult = await sql.query(countQuery, params);
+    // Count query
+    const countResult = await sql`
+      SELECT COUNT(*) as count FROM cs_cigars
+      WHERE available = true
+        AND (${brand}::text IS NULL OR brand = ${brand})
+        AND (${strength}::text IS NULL OR strength = ${strength})
+        AND (${retailer}::text IS NULL OR retailer = ${retailer})
+        AND (${minPrice}::numeric IS NULL OR price >= ${minPrice})
+        AND (${maxPrice}::numeric IS NULL OR price <= ${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm} OR description ILIKE ${searchTerm})
+    `;
     const total = parseInt(countResult[0].count);
 
-    // Get cigars
-    const cigarsQuery = `
+    // Fetch cigars
+    const cigars = await sql`
       SELECT 
-        id, name, brand, description, price, currency, url, image_url, 
-        retailer, length_mm, ring_gauge, strength, format
+        id, name, brand, description, price, original_price, currency, url, image_url, 
+        retailer, retailer_url, category, length_mm, ring_gauge, strength, format
       FROM cs_cigars 
-      ${whereClause}
+      WHERE available = true
+        AND (${brand}::text IS NULL OR brand = ${brand})
+        AND (${strength}::text IS NULL OR strength = ${strength})
+        AND (${retailer}::text IS NULL OR retailer = ${retailer})
+        AND (${minPrice}::numeric IS NULL OR price >= ${minPrice})
+        AND (${maxPrice}::numeric IS NULL OR price <= ${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm} OR description ILIKE ${searchTerm})
       ORDER BY brand, name
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      LIMIT ${limit} OFFSET ${offset}
     `;
-
-    const cigars = await sql.query(cigarsQuery, [...params, limit, offset]);
-
-    const pages = Math.ceil(total / limit);
 
     return NextResponse.json({
       cigars,
       total,
       page,
-      pages,
+      pages: Math.ceil(total / limit),
       limit
     });
 
