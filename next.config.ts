@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.smoke-king.co.uk',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn11.bigcommerce.com',
+      },
     ],
   },
 };
