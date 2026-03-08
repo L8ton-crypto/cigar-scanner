@@ -7,13 +7,12 @@ interface Cigar {
   id: number;
   name: string;
   brand: string;
-  price: number;
-  currency: string;
+  min_price: number;
+  max_price: number;
   image_url?: string;
   strength?: string;
   format?: string;
-  url: string;
-  retailer: string;
+  retailer_count: number;
 }
 
 interface Pagination {
@@ -33,19 +32,17 @@ interface CigarGridProps {
 function CigarCard({ cigar }: { cigar: Cigar }) {
   const getStrengthColor = (strength?: string) => {
     if (!strength) return 'bg-gray-500';
-    
     switch (strength.toLowerCase()) {
-      case 'mild':
-        return 'bg-green-500';
-      case 'medium':
-        return 'bg-[#c9a84c]';
-      case 'full':
-      case 'strong':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
+      case 'mild': return 'bg-green-500';
+      case 'medium': return 'bg-[#c9a84c]';
+      case 'full': case 'strong': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
+
+  const minPrice = Number(cigar.min_price);
+  const maxPrice = Number(cigar.max_price);
+  const hasPriceRange = maxPrice > minPrice && cigar.retailer_count > 1;
 
   return (
     <div className="cigar-card bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4">
@@ -64,17 +61,19 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
             <div className="text-[#c9a84c]/30 text-6xl">🚬</div>
           </div>
         )}
+        {/* Retailer count badge */}
+        {cigar.retailer_count > 1 && (
+          <div className="absolute top-2 right-2 bg-[#c9a84c] text-[#0f2419] text-xs font-bold px-2 py-1 rounded-full">
+            {cigar.retailer_count} retailers
+          </div>
+        )}
       </div>
 
       {/* Brand */}
-      <p className="text-[#c9a84c] text-sm font-medium mb-1">
-        {cigar.brand}
-      </p>
+      <p className="text-[#c9a84c] text-sm font-medium mb-1">{cigar.brand}</p>
 
       {/* Name */}
-      <h3 className="text-white font-semibold text-lg leading-tight mb-3 line-clamp-2">
-        {cigar.name}
-      </h3>
+      <h3 className="text-white font-semibold text-lg leading-tight mb-3 line-clamp-2">{cigar.name}</h3>
 
       {/* Strength & Format */}
       <div className="flex gap-2 mb-4">
@@ -92,30 +91,27 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
 
       {/* Price */}
       <div className="flex items-center justify-between mb-4">
-        <span className="text-[#c9a84c] text-2xl font-bold">
-          £{Number(cigar.price).toFixed(2)}
-        </span>
-        <span className="text-[#8aaa7a] text-sm">
-          {cigar.retailer}
-        </span>
+        <div>
+          <span className="text-[#8aaa7a] text-xs">from</span>
+          <span className="text-[#c9a84c] text-2xl font-bold ml-1">
+            £{minPrice.toFixed(2)}
+          </span>
+        </div>
+        {hasPriceRange && (
+          <span className="text-green-400 text-xs font-medium">
+            Save up to £{(maxPrice - minPrice).toFixed(2)}
+          </span>
+        )}
       </div>
 
       {/* Actions */}
       <div className="flex gap-2">
         <Link 
           href={`/cigar/${cigar.id}`}
-          className="flex-1 bg-[#0f2419] hover:bg-[#1a3a2a] text-white text-center py-2 px-4 rounded-lg border border-[#c9a84c]/20 transition-colors"
-        >
-          View
-        </Link>
-        <a
-          href={cigar.url}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex-1 bg-[#c9a84c] hover:bg-[#b8974a] text-[#0f2419] text-center py-2 px-4 rounded-lg font-medium transition-colors"
         >
-          Buy →
-        </a>
+          {cigar.retailer_count > 1 ? 'Compare Prices' : 'View Details'}
+        </Link>
       </div>
     </div>
   );
@@ -127,20 +123,10 @@ function LoadingSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4 animate-pulse">
           <div className="aspect-[3/4] bg-[#0a1a10] rounded-lg mb-4"></div>
-          <div className="h-4 bg-[#0a1a10] rounded mb-2"></div>
+          <div className="h-4 bg-[#0a1a10] rounded mb-2 w-1/3"></div>
           <div className="h-6 bg-[#0a1a10] rounded mb-3"></div>
-          <div className="flex gap-2 mb-4">
-            <div className="h-6 w-16 bg-[#0a1a10] rounded"></div>
-            <div className="h-6 w-20 bg-[#0a1a10] rounded"></div>
-          </div>
-          <div className="flex justify-between items-center mb-4">
-            <div className="h-8 w-20 bg-[#0a1a10] rounded"></div>
-            <div className="h-4 w-16 bg-[#0a1a10] rounded"></div>
-          </div>
-          <div className="flex gap-2">
-            <div className="h-8 flex-1 bg-[#0a1a10] rounded"></div>
-            <div className="h-8 flex-1 bg-[#0a1a10] rounded"></div>
-          </div>
+          <div className="h-8 w-24 bg-[#0a1a10] rounded mb-4"></div>
+          <div className="h-10 bg-[#0a1a10] rounded"></div>
         </div>
       ))}
     </div>
@@ -149,74 +135,40 @@ function LoadingSkeleton() {
 
 function Pagination({ pagination, onPageChange }: { pagination: Pagination; onPageChange: (page: number) => void }) {
   if (pagination.pages <= 1) return null;
-
   const getPageNumbers = () => {
     const delta = 2;
     const range = [];
-    const rangeWithDots = [];
-
-    for (
-      let i = Math.max(2, pagination.page - delta);
-      i <= Math.min(pagination.pages - 1, pagination.page + delta);
-      i++
-    ) {
+    const rangeWithDots: (number | string)[] = [];
+    for (let i = Math.max(2, pagination.page - delta); i <= Math.min(pagination.pages - 1, pagination.page + delta); i++) {
       range.push(i);
     }
-
-    if (pagination.page - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
+    if (pagination.page - delta > 2) { rangeWithDots.push(1, '...'); } else { rangeWithDots.push(1); }
     rangeWithDots.push(...range);
-
-    if (pagination.page + delta < pagination.pages - 1) {
-      rangeWithDots.push('...', pagination.pages);
-    } else {
-      rangeWithDots.push(pagination.pages);
-    }
-
+    if (pagination.page + delta < pagination.pages - 1) { rangeWithDots.push('...', pagination.pages); } else if (pagination.pages > 1) { rangeWithDots.push(pagination.pages); }
     return rangeWithDots;
   };
 
   return (
     <div className="flex justify-center items-center gap-2 mt-12">
-      {/* Previous */}
-      <button
-        onClick={() => onPageChange(pagination.page - 1)}
-        disabled={pagination.page === 1}
-        className="px-4 py-2 rounded-lg border border-[#c9a84c]/20 text-white hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
+      <button onClick={() => onPageChange(pagination.page - 1)} disabled={pagination.page === 1}
+        className="px-4 py-2 rounded-lg border border-[#c9a84c]/20 text-white hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
         ← Previous
       </button>
-
-      {/* Page Numbers */}
       <div className="flex gap-1">
         {getPageNumbers().map((page, index) => (
-          <button
-            key={index}
-            onClick={() => typeof page === 'number' && onPageChange(page)}
+          <button key={index} onClick={() => typeof page === 'number' && onPageChange(page)}
             disabled={page === '...' || page === pagination.page}
             className={`w-10 h-10 rounded-lg transition-colors ${
-              page === pagination.page
-                ? 'bg-[#c9a84c] text-[#0f2419] font-medium'
-                : page === '...'
-                ? 'text-[#8aaa7a] cursor-default'
+              page === pagination.page ? 'bg-[#c9a84c] text-[#0f2419] font-medium'
+                : page === '...' ? 'text-[#8aaa7a] cursor-default'
                 : 'border border-[#c9a84c]/20 text-white hover:bg-[#1a3a2a]'
-            }`}
-          >
+            }`}>
             {page}
           </button>
         ))}
       </div>
-
-      {/* Next */}
-      <button
-        onClick={() => onPageChange(pagination.page + 1)}
-        disabled={pagination.page === pagination.pages}
-        className="px-4 py-2 rounded-lg border border-[#c9a84c]/20 text-white hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
+      <button onClick={() => onPageChange(pagination.page + 1)} disabled={pagination.page === pagination.pages}
+        className="px-4 py-2 rounded-lg border border-[#c9a84c]/20 text-white hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
         Next →
       </button>
     </div>
@@ -224,10 +176,7 @@ function Pagination({ pagination, onPageChange }: { pagination: Pagination; onPa
 }
 
 export function CigarGrid({ cigars, loading, pagination, onPageChange }: CigarGridProps) {
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
-
+  if (loading) return <LoadingSkeleton />;
   if (cigars.length === 0) {
     return (
       <div className="text-center py-16">
@@ -237,15 +186,11 @@ export function CigarGrid({ cigars, loading, pagination, onPageChange }: CigarGr
       </div>
     );
   }
-
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {cigars.map((cigar) => (
-          <CigarCard key={cigar.id} cigar={cigar} />
-        ))}
+        {cigars.map((cigar) => <CigarCard key={cigar.id} cigar={cigar} />)}
       </div>
-      
       <Pagination pagination={pagination} onPageChange={onPageChange} />
     </>
   );

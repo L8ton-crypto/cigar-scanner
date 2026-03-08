@@ -10,13 +10,12 @@ interface Cigar {
   id: number;
   name: string;
   brand: string;
-  price: number;
-  currency: string;
+  min_price: number;
+  max_price: number;
   image_url?: string;
   strength?: string;
   format?: string;
-  url: string;
-  retailer: string;
+  retailer_count: number;
 }
 
 interface FiltersState {

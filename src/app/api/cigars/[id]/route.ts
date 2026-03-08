@@ -1,82 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql, ensureDb } from '@/lib/db';
+import { sql } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await ensureDb();
-
-    const resolvedParams = await params;
-    const cigarId = parseInt(resolvedParams.id);
-    
-    if (isNaN(cigarId)) {
-      return NextResponse.json(
-        { error: 'Invalid cigar ID' },
-        { status: 400 }
-      );
+    const { id } = await params;
+    const productId = parseInt(id);
+    if (isNaN(productId)) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }
 
-    const cigars = await sql`
-      SELECT 
-        id, name, brand, description, price, original_price, currency, url, image_url,
-        retailer, retailer_url, category, length_mm, ring_gauge, strength, format, country,
-        created_at
-      FROM cs_cigars 
-      WHERE id = ${cigarId} AND available = true
+    // Get the product
+    const products = await sql`
+      SELECT id, name, brand, description, image_url, format, strength, country,
+             length_mm, ring_gauge, min_price, max_price, retailer_count
+      FROM cs_products WHERE id = ${productId}
     `;
 
-    if (cigars.length === 0) {
-      return NextResponse.json(
-        { error: 'Cigar not found' },
-        { status: 404 }
-      );
+    if (products.length === 0) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    const cigar = cigars[0];
+    const product = products[0];
 
-    // Price comparison - find same/similar cigar at other retailers
-    // Match on brand + similar name (without quantity suffix)
-    const baseName = cigar.name
-      .replace(/\s*-\s*(1 Single|Single|Pack of \d+|Box of \d+|Tin of \d+|Cab of \d+|Bundle of \d+).*$/i, '')
-      .trim();
-    
-    const priceComparison = await sql`
-      SELECT id, name, price, original_price, retailer, retailer_url, url
-      FROM cs_cigars
-      WHERE brand = ${cigar.brand}
-      AND name ILIKE ${baseName + '%'}
-      AND id != ${cigarId}
-      AND available = true
+    // Get all prices for this product
+    const prices = await sql`
+      SELECT retailer, retailer_url, price, original_price, currency, available, url, source_name
+      FROM cs_prices 
+      WHERE product_id = ${productId}
       ORDER BY price ASC
-      LIMIT 10
     `;
 
-    // Get related cigars (same brand or similar format)
+    // Get related products (same brand)
     const related = await sql`
-      SELECT id, name, brand, price, image_url, strength, format, retailer
-      FROM cs_cigars 
-      WHERE (brand = ${cigar.brand} OR format = ${cigar.format})
-      AND id != ${cigarId}
-      AND available = true
-      ORDER BY 
-        CASE WHEN brand = ${cigar.brand} THEN 1 ELSE 2 END,
-        price
+      SELECT id, name, brand, image_url, min_price, strength, format, retailer_count
+      FROM cs_products 
+      WHERE brand = ${product.brand} AND id != ${productId}
+      ORDER BY name
       LIMIT 6
     `;
 
     return NextResponse.json({
-      cigar,
-      priceComparison,
+      cigar: product,
+      prices,
       related
     });
-
   } catch (error) {
-    console.error('Error fetching cigar:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch cigar' },
-      { status: 500 }
-    );
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
   }
 }
