@@ -262,7 +262,7 @@ export default function CigarDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold text-[#c9a84c] mb-1">
-                    £{cigar.price.toFixed(2)}
+                    £{Number(cigar.price).toFixed(2)}
                   </div>
                   <div className="text-[#8aaa7a] text-sm">
                     Available from {cigar.retailer}
@@ -316,7 +316,7 @@ export default function CigarDetailPage() {
                         {relatedCigar.name}
                       </h3>
                       <div className="flex justify-between items-center">
-                        <span className="text-[#c9a84c] font-bold">£{relatedCigar.price.toFixed(2)}</span>
+                        <span className="text-[#c9a84c] font-bold">£{Number(relatedCigar.price).toFixed(2)}</span>
                         {relatedCigar.strength && (
                           <span className={`px-2 py-0.5 rounded text-xs font-medium text-white ${getStrengthColor(relatedCigar.strength)}`}>
                             {relatedCigar.strength}

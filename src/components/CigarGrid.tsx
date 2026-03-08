@@ -93,7 +93,7 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
       {/* Price */}
       <div className="flex items-center justify-between mb-4">
         <span className="text-[#c9a84c] text-2xl font-bold">
-          £{cigar.price.toFixed(2)}
+          £{Number(cigar.price).toFixed(2)}
         </span>
         <span className="text-[#8aaa7a] text-sm">
           {cigar.retailer}
