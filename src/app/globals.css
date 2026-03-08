@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+body {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f2419 0%, #0a1a10 100%);
+  min-height: 100vh;
+  color: white;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a1a10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c9a84c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8974a;
+}
+
+/* Loading spinner */
+.spinner {
+  border: 2px solid #1a3a2a;
+  border-top: 2px solid #c9a84c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Cigar card hover effects */
+.cigar-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+.cigar-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(201, 168, 76, 0.15);
+  border-color: rgba(201, 168, 76, 0.4);
+}
