@@ -46,7 +46,7 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
   const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
   return (
-    <div className="bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-6 space-y-6">
+    <div className="bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4 sm:p-6 space-y-4">
       {/* Search Bar */}
       <div className="relative">
         <input
@@ -61,74 +61,18 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
         </div>
       </div>
 
-      {/* Filters Row */}
-      <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 sm:gap-4">
-        {/* Mobile: Brand and Strength side by side */}
-        <div className="grid grid-cols-2 gap-2 sm:hidden">
-          {/* Brand Filter */}
-          <div className="relative" ref={brandDropdownRef}>
-            <button
-              onClick={() => setShowBrandDropdown(!showBrandDropdown)}
-              className="w-full bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 text-left text-white hover:border-[#c9a84c]/40 focus:border-[#c9a84c] focus:outline-none transition-colors flex justify-between items-center"
-            >
-              <span className={filters.brand ? 'text-white' : 'text-[#8aaa7a]'}>
-                {filters.brand || 'All Brands'}
-              </span>
-              <span className="text-[#8aaa7a]">▼</span>
-            </button>
-
-            {showBrandDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
-                <button
-                  onClick={() => {
-                    handleInputChange('brand', '');
-                    setShowBrandDropdown(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-white hover:bg-[#1a3a2a] transition-colors border-b border-[#c9a84c]/10"
-                >
-                  All Brands
-                </button>
-                {brands.map((brand) => (
-                  <button
-                    key={brand.name}
-                    onClick={() => {
-                      handleInputChange('brand', brand.name);
-                      setShowBrandDropdown(false);
-                    }}
-                    className="w-full px-4 py-3 text-left text-white hover:bg-[#1a3a2a] transition-colors flex justify-between items-center"
-                  >
-                    <span>{brand.name}</span>
-                    <span className="text-[#8aaa7a] text-sm">({brand.count})</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Strength Filter */}
-          <select
-            value={filters.strength}
-            onChange={(e) => handleInputChange('strength', e.target.value)}
-            className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 text-white focus:border-[#c9a84c] focus:outline-none transition-colors"
-          >
-            {strengthOptions.map((option) => (
-              <option key={option.value} value={option.value} className="bg-[#0f2419]">
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Desktop: Brand Filter */}
-        <div className="relative hidden sm:block" ref={brandDropdownRef}>
+      {/* Filters - 2x2 grid on mobile, 4-col on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        {/* Brand Filter */}
+        <div className="relative" ref={brandDropdownRef}>
           <button
             onClick={() => setShowBrandDropdown(!showBrandDropdown)}
-            className="w-full bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-left text-white hover:border-[#c9a84c]/40 focus:border-[#c9a84c] focus:outline-none transition-colors flex justify-between items-center"
+            className="w-full bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-left text-white hover:border-[#c9a84c]/40 focus:border-[#c9a84c] focus:outline-none transition-colors flex justify-between items-center text-sm sm:text-base"
           >
-            <span className={filters.brand ? 'text-white' : 'text-[#8aaa7a]'}>
+            <span className={`truncate ${filters.brand ? 'text-white' : 'text-[#8aaa7a]'}`}>
               {filters.brand || 'All Brands'}
             </span>
-            <span className="text-[#8aaa7a]">▼</span>
+            <span className="text-[#8aaa7a] ml-1">▼</span>
           </button>
 
           {showBrandDropdown && (
@@ -159,11 +103,11 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
           )}
         </div>
 
-        {/* Desktop: Strength Filter */}
+        {/* Strength Filter */}
         <select
           value={filters.strength}
           onChange={(e) => handleInputChange('strength', e.target.value)}
-          className="hidden sm:block bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-white focus:border-[#c9a84c] focus:outline-none transition-colors"
+          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-white focus:border-[#c9a84c] focus:outline-none transition-colors text-sm sm:text-base"
         >
           {strengthOptions.map((option) => (
             <option key={option.value} value={option.value} className="bg-[#0f2419]">
@@ -172,14 +116,14 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
           ))}
         </select>
 
-        {/* Price Range - Mobile and Desktop */}
-        <div className="flex gap-2">
+        {/* Price Range - both inputs in one grid cell */}
+        <div className="flex gap-1 sm:gap-2">
           <input
             type="number"
             placeholder="Min £"
             value={filters.minPrice}
             onChange={(e) => handleInputChange('minPrice', e.target.value)}
-            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
+            className="w-full min-w-0 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-2 py-2 sm:px-3 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors text-sm sm:text-base"
             min="0"
             step="0.01"
           />
@@ -188,7 +132,7 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
             placeholder="Max £"
             value={filters.maxPrice}
             onChange={(e) => handleInputChange('maxPrice', e.target.value)}
-            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
+            className="w-full min-w-0 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-2 py-2 sm:px-3 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors text-sm sm:text-base"
             min="0"
             step="0.01"
           />
@@ -198,13 +142,13 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
         <button
           onClick={clearFilters}
           disabled={!hasActiveFilters}
-          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-2 sm:py-3 text-[#c9a84c] hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-[#c9a84c] hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm sm:text-base"
         >
           Clear Filters
         </button>
       </div>
 
-      {/* Strength Pills (Alternative/Additional UI) */}
+      {/* Strength Pills */}
       <div className="flex flex-wrap gap-2">
         {strengthOptions.slice(1).map((option) => (
           <button
@@ -225,52 +169,29 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
       {hasActiveFilters && (
         <div className="border-t border-[#c9a84c]/20 pt-4">
           <div className="flex flex-wrap gap-2">
-            <span className="text-[#8aaa7a] text-sm">Active filters:</span>
+            <span className="text-[#8aaa7a] text-sm">Active:</span>
             {filters.search && (
               <span className="bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-1 rounded text-sm flex items-center gap-1">
-                Search: "{filters.search}"
-                <button 
-                  onClick={() => handleInputChange('search', '')}
-                  className="text-[#c9a84c] hover:text-white"
-                >
-                  ×
-                </button>
+                &ldquo;{filters.search}&rdquo;
+                <button onClick={() => handleInputChange('search', '')} className="text-[#c9a84c] hover:text-white">×</button>
               </span>
             )}
             {filters.brand && (
               <span className="bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-1 rounded text-sm flex items-center gap-1">
-                Brand: {filters.brand}
-                <button 
-                  onClick={() => handleInputChange('brand', '')}
-                  className="text-[#c9a84c] hover:text-white"
-                >
-                  ×
-                </button>
+                {filters.brand}
+                <button onClick={() => handleInputChange('brand', '')} className="text-[#c9a84c] hover:text-white">×</button>
               </span>
             )}
             {filters.strength && (
               <span className="bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-1 rounded text-sm flex items-center gap-1">
-                Strength: {filters.strength}
-                <button 
-                  onClick={() => handleInputChange('strength', '')}
-                  className="text-[#c9a84c] hover:text-white"
-                >
-                  ×
-                </button>
+                {filters.strength}
+                <button onClick={() => handleInputChange('strength', '')} className="text-[#c9a84c] hover:text-white">×</button>
               </span>
             )}
             {(filters.minPrice || filters.maxPrice) && (
               <span className="bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-1 rounded text-sm flex items-center gap-1">
-                Price: £{filters.minPrice || '0'} - £{filters.maxPrice || '∞'}
-                <button 
-                  onClick={() => {
-                    handleInputChange('minPrice', '');
-                    handleInputChange('maxPrice', '');
-                  }}
-                  className="text-[#c9a84c] hover:text-white"
-                >
-                  ×
-                </button>
+                £{filters.minPrice || '0'}-£{filters.maxPrice || '∞'}
+                <button onClick={() => { handleInputChange('minPrice', ''); handleInputChange('maxPrice', ''); }} className="text-[#c9a84c] hover:text-white">×</button>
               </span>
             )}
           </div>
