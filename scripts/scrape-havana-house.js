@@ -14,8 +14,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 const sql = neon(process.env.DATABASE_URL);
 
 const categoryUrls = [
-  'https://www.havanahouse.co.uk/product-category/cigars/cuban/',
-  'https://www.havanahouse.co.uk/product-category/cigars/new-world/',
+  'https://www.havanahouse.co.uk/product-category/cigars/',
 ];
 
 async function scrape() {
@@ -29,7 +28,7 @@ async function scrape() {
   const allProducts = [];
 
   for (const catUrl of categoryUrls) {
-    const catName = catUrl.includes('cuban') ? 'Cuban' : 'New World';
+    const catName = 'All Cigars';
     console.log(`\n📦 Scraping ${catName}...`);
     
     let pageNum = 1;

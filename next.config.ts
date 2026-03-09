@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'cdn11.bigcommerce.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.havanahouse.co.uk',
+      },
+      {
+        protocol: 'https',
+        hostname: 'stagingdev.staging.mysecurepage.net',
+      },
     ],
   },
 };
