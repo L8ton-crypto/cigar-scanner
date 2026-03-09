@@ -2,9 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
+import { saveScan, createThumbnail, type ScanRecord } from '@/lib/scanHistory';
 
 interface ScanModalProps {
   onClose: () => void;
+  onScanSaved?: () => void;
 }
 
 interface IdentificationResult {
@@ -29,7 +31,7 @@ interface Match {
   retailer: string;
 }
 
-export function ScanModal({ onClose }: ScanModalProps) {
+export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
   const [step, setStep] = useState<'upload' | 'scanning' | 'results'>('upload');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [identification, setIdentification] = useState<IdentificationResult | null>(null);
@@ -138,6 +140,25 @@ export function ScanModal({ onClose }: ScanModalProps) {
       setMatches(data.matches);
       setSimilar(data.similar || []);
       setStep('results');
+
+      // Save scan to history
+      if (selectedImage && data.identification) {
+        createThumbnail(selectedImage).then(thumbnail => {
+          const bestPrice = data.matches?.length > 0
+            ? Math.min(...data.matches.map((m: any) => m.price))
+            : undefined;
+          saveScan({
+            thumbnail,
+            identification: data.identification,
+            matchCount: data.matches?.length || 0,
+            bestPrice,
+            retailerCount: data.matches
+              ? new Set(data.matches.map((m: any) => m.retailer)).size
+              : 0,
+          });
+          onScanSaved?.();
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan cigar');
       setStep('upload');

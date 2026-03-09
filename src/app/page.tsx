@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { CigarGrid } from '@/components/CigarGrid';
 import { SearchFilters } from '@/components/SearchFilters';
 import { ScanModal } from '@/components/ScanModal';
+import { getRecentScans, type ScanRecord } from '@/lib/scanHistory';
 
 interface Cigar {
   id: number;
@@ -38,6 +40,8 @@ export default function Home() {
     limit: 24
   });
   
+  const [recentScans, setRecentScans] = useState<ScanRecord[]>([]);
+  
   const [filters, setFilters] = useState<FiltersState>({
     search: '',
     brand: '',
@@ -51,9 +55,14 @@ export default function Home() {
     fetchCigars();
   }, [filters, pagination.page]);
 
-  // Fetch brands on mount
+  // Fetch brands and recent scans on mount
   useEffect(() => {
     fetchBrands();
+    setRecentScans(getRecentScans(4));
+  }, []);
+
+  const refreshRecentScans = useCallback(() => {
+    setRecentScans(getRecentScans(4));
   }, []);
 
   const fetchCigars = async () => {
@@ -106,22 +115,37 @@ export default function Home() {
   return (
     <div className="min-h-screen text-white font-[var(--font-inter)]">
       {/* Header */}
-      <header className="border-b border-[#c9a84c]/20 bg-[#0a1a10]/80 backdrop-blur">
+      <header className="border-b border-[#c9a84c]/20 bg-[#0a1a10]/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Image 
-              src="/logo.jpg" 
-              alt="Hearth & Leaf" 
-              width={48} 
-              height={48}
-              className="rounded-lg"
-            />
-            <div>
-              <h1 className="text-2xl font-bold font-[var(--font-playfair)] text-[#c9a84c]">
-                Hearth & Leaf
-              </h1>
-              <p className="text-sm text-[#8aaa7a]">CigarScanner</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Image 
+                src="/logo.jpg" 
+                alt="Hearth & Leaf" 
+                width={48} 
+                height={48}
+                className="rounded-lg"
+              />
+              <div>
+                <h1 className="text-2xl font-bold font-[var(--font-playfair)] text-[#c9a84c]">
+                  Hearth & Leaf
+                </h1>
+                <p className="text-sm text-[#8aaa7a]">CigarScanner</p>
+              </div>
             </div>
+            <nav className="flex items-center gap-4">
+              <Link
+                href="/history"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>🕒</span> History
+                {recentScans.length > 0 && (
+                  <span className="bg-[#c9a84c]/20 text-[#c9a84c] text-xs px-1.5 py-0.5 rounded-full">
+                    {recentScans.length}
+                  </span>
+                )}
+              </Link>
+            </nav>
           </div>
         </div>
       </header>
@@ -163,6 +187,62 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Recent Scans */}
+        {recentScans.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white font-[var(--font-playfair)]">
+                Recent Scans
+              </h2>
+              <Link
+                href="/history"
+                className="text-[#c9a84c] text-sm hover:underline"
+              >
+                View all →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {recentScans.map((scan) => (
+                <div
+                  key={scan.id}
+                  className="bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-3 border border-[#c9a84c]/10 hover:border-[#c9a84c]/30 transition-all"
+                >
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#0a1a10] flex-shrink-0">
+                      {scan.thumbnail ? (
+                        <Image
+                          src={scan.thumbnail}
+                          alt={scan.identification.name || 'Scan'}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#c9a84c]/30">
+                          🚬
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[#c9a84c] text-xs font-medium truncate">
+                        {scan.identification.brand || 'Unknown'}
+                      </p>
+                      <p className="text-white text-sm font-medium truncate">
+                        {scan.identification.name || 'Unknown cigar'}
+                      </p>
+                      {scan.bestPrice !== undefined && (
+                        <p className="text-[#8aaa7a] text-xs mt-0.5">
+                          From £{scan.bestPrice.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Search & Filters */}
         <div className="mb-8">
           <SearchFilters 
@@ -194,7 +274,10 @@ export default function Home() {
 
       {/* Scan Modal */}
       {showScanModal && (
-        <ScanModal onClose={() => setShowScanModal(false)} />
+        <ScanModal 
+          onClose={() => setShowScanModal(false)} 
+          onScanSaved={refreshRecentScans}
+        />
       )}
     </div>
   );
