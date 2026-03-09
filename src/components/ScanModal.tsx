@@ -34,6 +34,7 @@ export function ScanModal({ onClose }: ScanModalProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [identification, setIdentification] = useState<IdentificationResult | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [similar, setSimilar] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,6 +136,7 @@ export function ScanModal({ onClose }: ScanModalProps) {
 
       setIdentification(data.identification);
       setMatches(data.matches);
+      setSimilar(data.similar || []);
       setStep('results');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan cigar');
@@ -147,6 +149,7 @@ export function ScanModal({ onClose }: ScanModalProps) {
     setSelectedImage(null);
     setIdentification(null);
     setMatches([]);
+    setSimilar([]);
     setError(null);
     stopCamera();
   };
@@ -418,10 +421,65 @@ export function ScanModal({ onClose }: ScanModalProps) {
               )}
 
               {matches.length === 0 && identification.confidence > 0 && (
-                <div className="text-center py-8">
-                  <div className="text-4xl mb-2">🤔</div>
-                  <h3 className="text-white font-medium mb-1">No exact matches found</h3>
-                  <p className="text-[#8aaa7a] text-sm">Try browsing our catalog for similar cigars</p>
+                <div className="space-y-6">
+                  <div className="bg-[#1a3a2a]/60 rounded-lg p-5 text-center">
+                    <div className="text-3xl mb-3">✅</div>
+                    <h3 className="text-white font-medium mb-2">Cigar identified successfully!</h3>
+                    <p className="text-[#8aaa7a] text-sm">
+                      This cigar isn&apos;t currently stocked by UK retailers we track. 
+                      It may be a regional exclusive or limited edition.
+                    </p>
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent((identification.brand || '') + ' ' + (identification.name || '') + ' cigar buy UK')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 bg-[#c9a84c]/20 hover:bg-[#c9a84c]/30 text-[#c9a84c] px-4 py-2 rounded-lg text-sm transition-colors"
+                    >
+                      🔍 Search online
+                    </a>
+                  </div>
+
+                  {/* Similar cigars from the same brand */}
+                  {similar.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#c9a84c] mb-4">
+                        Other {identification.brand} cigars available in the UK
+                      </h3>
+                      <div className="grid gap-3">
+                        {similar.map((item: any) => (
+                          <a
+                            key={item.id}
+                            href={`/cigar/${item.id}`}
+                            className="bg-[#1a3a2a]/80 backdrop-blur rounded-lg p-4 flex gap-4 hover:bg-[#1a3a2a] transition-colors"
+                          >
+                            <div className="w-14 h-14 bg-[#0a1a10] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {item.image_url ? (
+                                <Image
+                                  src={item.image_url}
+                                  alt={item.name}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              ) : (
+                                <span className="text-[#c9a84c]/30 text-xl">🚬</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white font-medium text-sm truncate">{item.name}</div>
+                              <div className="text-[#8aaa7a] text-xs mt-1">
+                                {item.retailer_count > 1 
+                                  ? `From £${Number(item.price).toFixed(2)} across ${item.retailer_count} retailers`
+                                  : `£${Number(item.price).toFixed(2)}`
+                                }
+                              </div>
+                            </div>
+                            <div className="text-[#c9a84c] text-sm self-center">→</div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
