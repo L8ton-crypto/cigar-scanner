@@ -62,9 +62,65 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
       </div>
 
       {/* Filters Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Brand Filter */}
-        <div className="relative" ref={brandDropdownRef}>
+      <div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+        {/* Mobile: Brand and Strength side by side */}
+        <div className="grid grid-cols-2 gap-2 sm:hidden">
+          {/* Brand Filter */}
+          <div className="relative" ref={brandDropdownRef}>
+            <button
+              onClick={() => setShowBrandDropdown(!showBrandDropdown)}
+              className="w-full bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 text-left text-white hover:border-[#c9a84c]/40 focus:border-[#c9a84c] focus:outline-none transition-colors flex justify-between items-center"
+            >
+              <span className={filters.brand ? 'text-white' : 'text-[#8aaa7a]'}>
+                {filters.brand || 'All Brands'}
+              </span>
+              <span className="text-[#8aaa7a]">▼</span>
+            </button>
+
+            {showBrandDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                <button
+                  onClick={() => {
+                    handleInputChange('brand', '');
+                    setShowBrandDropdown(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-white hover:bg-[#1a3a2a] transition-colors border-b border-[#c9a84c]/10"
+                >
+                  All Brands
+                </button>
+                {brands.map((brand) => (
+                  <button
+                    key={brand.name}
+                    onClick={() => {
+                      handleInputChange('brand', brand.name);
+                      setShowBrandDropdown(false);
+                    }}
+                    className="w-full px-4 py-3 text-left text-white hover:bg-[#1a3a2a] transition-colors flex justify-between items-center"
+                  >
+                    <span>{brand.name}</span>
+                    <span className="text-[#8aaa7a] text-sm">({brand.count})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Strength Filter */}
+          <select
+            value={filters.strength}
+            onChange={(e) => handleInputChange('strength', e.target.value)}
+            className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 text-white focus:border-[#c9a84c] focus:outline-none transition-colors"
+          >
+            {strengthOptions.map((option) => (
+              <option key={option.value} value={option.value} className="bg-[#0f2419]">
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Desktop: Brand Filter */}
+        <div className="relative hidden sm:block" ref={brandDropdownRef}>
           <button
             onClick={() => setShowBrandDropdown(!showBrandDropdown)}
             className="w-full bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-left text-white hover:border-[#c9a84c]/40 focus:border-[#c9a84c] focus:outline-none transition-colors flex justify-between items-center"
@@ -103,11 +159,11 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
           )}
         </div>
 
-        {/* Strength Filter */}
+        {/* Desktop: Strength Filter */}
         <select
           value={filters.strength}
           onChange={(e) => handleInputChange('strength', e.target.value)}
-          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-white focus:border-[#c9a84c] focus:outline-none transition-colors"
+          className="hidden sm:block bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-white focus:border-[#c9a84c] focus:outline-none transition-colors"
         >
           {strengthOptions.map((option) => (
             <option key={option.value} value={option.value} className="bg-[#0f2419]">
@@ -116,14 +172,14 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
           ))}
         </select>
 
-        {/* Price Range */}
+        {/* Price Range - Mobile and Desktop */}
         <div className="flex gap-2">
           <input
             type="number"
             placeholder="Min £"
             value={filters.minPrice}
             onChange={(e) => handleInputChange('minPrice', e.target.value)}
-            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
+            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
             min="0"
             step="0.01"
           />
@@ -132,7 +188,7 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
             placeholder="Max £"
             value={filters.maxPrice}
             onChange={(e) => handleInputChange('maxPrice', e.target.value)}
-            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
+            className="flex-1 bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:py-3 text-white placeholder-[#8aaa7a] focus:border-[#c9a84c] focus:outline-none transition-colors"
             min="0"
             step="0.01"
           />
@@ -142,7 +198,7 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
         <button
           onClick={clearFilters}
           disabled={!hasActiveFilters}
-          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-3 text-[#c9a84c] hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-4 py-2 sm:py-3 text-[#c9a84c] hover:bg-[#1a3a2a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Clear Filters
         </button>
