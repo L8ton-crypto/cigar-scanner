@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 
 interface ScanModalProps {
@@ -40,15 +40,28 @@ export function ScanModal({ onClose }: ScanModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const pendingStream = useRef<MediaStream | null>(null);
+
+  // When cameraActive becomes true, the video element renders.
+  // This callback assigns the pending stream to it.
+  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    if (node && pendingStream.current) {
+      node.srcObject = pendingStream.current;
+      node.play().catch(() => {});
+      pendingStream.current = null;
+    }
+  }, []);
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-        setError(null);
-      }
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setError(null);
+      // Store stream and show video element - callback ref will wire it up
+      pendingStream.current = stream;
+      setCameraActive(true);
     } catch (err) {
       setError('Camera access denied. Please use the upload option instead.');
     }
@@ -196,9 +209,10 @@ export function ScanModal({ onClose }: ScanModalProps) {
                     {cameraActive ? (
                       <div className="space-y-4">
                         <video
-                          ref={videoRef}
+                          ref={videoCallbackRef}
                           autoPlay
                           playsInline
+                          muted
                           className="w-full rounded-lg border border-[#c9a84c]/20"
                         />
                         <div className="flex gap-2 justify-center">
