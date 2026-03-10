@@ -38,6 +38,9 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [similar, setSimilar] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -176,6 +179,53 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to scan cigar');
       setStep('upload');
+    }
+  };
+
+  const handleShare = async () => {
+    if (shareUrl) {
+      // Already shared - just copy
+      try {
+        await navigator.clipboard.writeText(window.location.origin + shareUrl);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch {}
+      return;
+    }
+
+    setSharing(true);
+    try {
+      // Create thumbnail from selectedImage
+      let thumbnail: string | undefined;
+      if (selectedImage) {
+        thumbnail = await createThumbnail(selectedImage, 200);
+      }
+
+      const response = await fetch('/api/scans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identification,
+          matches,
+          similar,
+          thumbnail,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.url) {
+        setShareUrl(data.url);
+        const fullUrl = window.location.origin + data.url;
+        try {
+          await navigator.clipboard.writeText(fullUrl);
+          setShareCopied(true);
+          setTimeout(() => setShareCopied(false), 2000);
+        } catch {}
+      }
+    } catch (err) {
+      console.error('Failed to share scan:', err);
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -523,19 +573,44 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
               )}
 
               {/* Actions */}
-              <div className="flex gap-2 justify-center pt-4">
-                <button
-                  onClick={reset}
-                  className="bg-[#1a3a2a] hover:bg-[#2a4a3a] text-white px-6 py-2 rounded-lg transition-colors"
-                >
-                  Scan Another
-                </button>
-                <button
-                  onClick={onClose}
-                  className="bg-[#c9a84c] hover:bg-[#b8974a] text-[#0f2419] px-6 py-2 rounded-lg font-medium transition-colors"
-                >
-                  Done
-                </button>
+              <div className="flex flex-col items-center gap-3 pt-4">
+                <div className="flex gap-2">
+                  <button
+                    onClick={reset}
+                    className="bg-[#1a3a2a] hover:bg-[#2a4a3a] text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    Scan Another
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    disabled={sharing}
+                    className="bg-[#1a3a2a] hover:bg-[#2a4a3a] text-[#c9a84c] px-6 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {sharing ? (
+                      <>
+                        <span className="spinner w-4 h-4"></span>
+                        Saving...
+                      </>
+                    ) : shareCopied ? (
+                      '✓ Link Copied!'
+                    ) : shareUrl ? (
+                      '🔗 Copy Link'
+                    ) : (
+                      '🔗 Share'
+                    )}
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="bg-[#c9a84c] hover:bg-[#b8974a] text-[#0f2419] px-6 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+                {shareUrl && (
+                  <p className="text-[#8aaa7a] text-xs">
+                    Shareable link created — anyone with the link can view this scan
+                  </p>
+                )}
               </div>
             </div>
           )}

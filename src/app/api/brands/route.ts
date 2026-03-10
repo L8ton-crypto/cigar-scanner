@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { sql, ensureDb } from '@/lib/db';
 
 export async function GET() {
   try {
+    await ensureDb();
     const brands = await sql`
       SELECT brand as name, COUNT(*) as count
       FROM cs_products
