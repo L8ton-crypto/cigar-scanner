@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { saveScan, createThumbnail, type ScanRecord } from '@/lib/scanHistory';
 
@@ -43,27 +43,39 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
-  const pendingStream = useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  // When cameraActive becomes true, the video element renders.
-  // This callback assigns the pending stream to it.
-  const videoCallbackRef = useCallback((node: HTMLVideoElement | null) => {
-    videoRef.current = node;
-    if (node && pendingStream.current) {
-      node.srcObject = pendingStream.current;
-      node.play().catch(() => {});
-      pendingStream.current = null;
-    }
+  // Clean up stream on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
+    };
   }, []);
+
+  // Wire up stream to video element when camera becomes active
+  // useEffect runs after DOM commit, so videoRef.current is set
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive]);
 
   const startCamera = async () => {
     try {
+      // Clean up any existing stream first
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
+      }
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } 
       });
+      streamRef.current = stream;
       setError(null);
-      // Store stream and show video element - callback ref will wire it up
-      pendingStream.current = stream;
       setCameraActive(true);
     } catch (err) {
       setError('Camera access denied. Please use the upload option instead.');
@@ -71,9 +83,11 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
   };
 
   const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
@@ -173,6 +187,10 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
     setSimilar([]);
     setError(null);
     stopCamera();
+    // Reset file input so the same file can be re-selected
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -233,7 +251,7 @@ export function ScanModal({ onClose, onScanSaved }: ScanModalProps) {
                     {cameraActive ? (
                       <div className="space-y-4">
                         <video
-                          ref={videoCallbackRef}
+                          ref={videoRef}
                           autoPlay
                           playsInline
                           muted
