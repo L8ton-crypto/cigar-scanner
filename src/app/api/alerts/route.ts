@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating alert:', error);
-    return NextResponse.json({ error: 'Failed to create alert' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to create alert', detail: msg }, { status: 500 });
   }
 }
 
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ alerts });
   } catch (error) {
     console.error('Error fetching alerts:', error);
-    return NextResponse.json({ error: 'Failed to fetch alerts' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: 'Failed to fetch alerts', detail: msg }, { status: 500 });
   }
 }
