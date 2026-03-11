@@ -25,5 +25,22 @@ export async function ensureDb() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_alerts (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL,
+      email TEXT NOT NULL,
+      target_price DECIMAL(10,2) NOT NULL,
+      active BOOLEAN DEFAULT true,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      triggered_at TIMESTAMP WITH TIME ZONE
+    )
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_alerts_email ON cs_alerts(email)
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_alerts_active ON cs_alerts(active) WHERE active = true
+  `;
   initialized = true;
 }

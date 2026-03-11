@@ -17,6 +17,11 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Hearth & Leaf — CigarScanner",
   description: "Scan any cigar to identify it, compare prices across UK retailers, and find the best deals.",
+  openGraph: {
+    title: "Hearth & Leaf — CigarScanner",
+    description: "Scan any cigar to identify it, compare prices across UK retailers, and find the best deals.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

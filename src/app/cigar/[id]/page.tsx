@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { PriceAlertButton } from '@/components/PriceAlertButton';
 
 interface Product {
   id: number;
@@ -142,15 +143,24 @@ export default function CigarDetailPage() {
 
         {/* Price Comparison */}
         <div className="bg-[#1a3a2a]/60 rounded-2xl p-8 mb-12">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
             <h2 className="text-[#c9a84c] text-2xl font-bold">
               💰 Price Comparison
             </h2>
-            {savings > 0 && (
-              <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm font-medium">
-                Save up to £{savings.toFixed(2)} by comparing
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {savings > 0 && (
+                <span className="bg-green-500/20 text-green-400 px-4 py-2 rounded-full text-sm font-medium">
+                  Save up to £{savings.toFixed(2)} by comparing
+                </span>
+              )}
+              {cheapest && (
+                <PriceAlertButton
+                  productId={product.id}
+                  productName={`${product.brand} ${product.name}`}
+                  currentPrice={Number(cheapest.price)}
+                />
+              )}
+            </div>
           </div>
 
           {prices.length === 0 ? (
