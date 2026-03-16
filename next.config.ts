@@ -27,6 +27,22 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'stagingdev.staging.mysecurepage.net',
       },
+      {
+        protocol: 'https',
+        hostname: 'cdn.ecommercedns.uk',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.sauttercigars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.thehouseofcigars.co.uk',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.turmeaus.co.uk',
+      },
     ],
   },
 };
