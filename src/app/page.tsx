@@ -26,6 +26,7 @@ interface FiltersState {
   strength: string;
   minPrice: string;
   maxPrice: string;
+  sort: string;
 }
 
 export default function Home() {
@@ -47,7 +48,8 @@ export default function Home() {
     brand: '',
     strength: '',
     minPrice: '',
-    maxPrice: ''
+    maxPrice: '',
+    sort: 'brand-asc'
   });
 
   // Fetch cigars

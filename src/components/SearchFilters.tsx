@@ -8,6 +8,7 @@ interface FiltersState {
   strength: string;
   minPrice: string;
   maxPrice: string;
+  sort: string;
 }
 
 interface SearchFiltersProps {
@@ -22,6 +23,16 @@ const strengthOptions = [
   { value: 'Medium', label: 'Medium' },
   { value: 'Full', label: 'Full' },
   { value: 'Strong', label: 'Strong' }
+];
+
+const sortOptions = [
+  { value: 'brand-asc', label: 'Brand A-Z' },
+  { value: 'name-asc', label: 'Name A-Z' },
+  { value: 'name-desc', label: 'Name Z-A' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'retailers-desc', label: 'Most Retailers' },
+  { value: 'savings-desc', label: 'Biggest Savings' },
 ];
 
 export function SearchFilters({ filters, brands, onFiltersChange }: SearchFiltersProps) {
@@ -39,11 +50,12 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
       brand: '',
       strength: '',
       minPrice: '',
-      maxPrice: ''
+      maxPrice: '',
+      sort: 'brand-asc'
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => value !== '');
+  const hasActiveFilters = filters.search !== '' || filters.brand !== '' || filters.strength !== '' || filters.minPrice !== '' || filters.maxPrice !== '' || (filters.sort !== 'brand-asc' && filters.sort !== '');
 
   return (
     <div className="bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4 sm:p-6 space-y-4">
@@ -61,8 +73,8 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
         </div>
       </div>
 
-      {/* Filters - 2x2 grid on mobile, 4-col on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      {/* Filters grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
         {/* Brand Filter */}
         <div className="relative" ref={brandDropdownRef}>
           <button
@@ -137,6 +149,19 @@ export function SearchFilters({ filters, brands, onFiltersChange }: SearchFilter
             step="0.01"
           />
         </div>
+
+        {/* Sort */}
+        <select
+          value={filters.sort}
+          onChange={(e) => handleInputChange('sort', e.target.value)}
+          className="bg-[#0f2419] border border-[#c9a84c]/20 rounded-lg px-3 py-2 sm:px-4 sm:py-3 text-white focus:border-[#c9a84c] focus:outline-none transition-colors text-sm sm:text-base"
+        >
+          {sortOptions.map((option) => (
+            <option key={option.value} value={option.value} className="bg-[#0f2419]">
+              {option.label}
+            </option>
+          ))}
+        </select>
 
         {/* Clear Filters */}
         <button
