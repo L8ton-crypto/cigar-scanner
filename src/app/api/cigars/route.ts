@@ -1,20 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, ensureDb } from '@/lib/db';
+import { sql, ensureDb } from '@/lib/db';
 
-const sortMap: Record<string, string> = {
-  'price-asc': 'min_price ASC NULLS LAST, name ASC',
-  'price-desc': 'min_price DESC NULLS LAST, name ASC',
-  'name-asc': 'name ASC',
-  'name-desc': 'name DESC',
-  'retailers-desc': 'retailer_count DESC NULLS LAST, name ASC',
-  'savings-desc': '(COALESCE(max_price, 0) - COALESCE(min_price, 0)) DESC NULLS LAST, name ASC',
-  'brand-asc': 'brand ASC, name ASC',
-};
+type SortKey = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'retailers-desc' | 'savings-desc' | 'brand-asc';
+const validSorts: SortKey[] = ['price-asc', 'price-desc', 'name-asc', 'name-desc', 'retailers-desc', 'savings-desc', 'brand-asc'];
+
+async function fetchSorted(
+  brand: string | null, strength: string | null, minPrice: number | null,
+  maxPrice: number | null, searchTerm: string | null, sortKey: SortKey,
+  limit: number, offset: number
+) {
+  switch (sortKey) {
+    case 'price-asc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY min_price ASC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
+    case 'price-desc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY min_price DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
+    case 'name-asc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY name ASC LIMIT ${limit} OFFSET ${offset}`;
+    case 'name-desc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY name DESC LIMIT ${limit} OFFSET ${offset}`;
+    case 'retailers-desc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY retailer_count DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
+    case 'savings-desc':
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY (COALESCE(max_price,0)-COALESCE(min_price,0)) DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
+    default:
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+        WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
+        AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
+        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
+        ORDER BY brand ASC, name ASC LIMIT ${limit} OFFSET ${offset}`;
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
     await ensureDb();
-    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const brand = searchParams.get('brand');
     const strength = searchParams.get('strength');
@@ -26,9 +69,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '24');
     const offset = (page - 1) * limit;
     const searchTerm = search ? `%${search}%` : null;
-
-    // Validate sort - only allow known keys (prevents SQL injection)
-    const orderBy = sortMap[sort] || sortMap['brand-asc'];
+    const sortKey: SortKey = validSorts.includes(sort as SortKey) ? sort as SortKey : 'brand-asc';
 
     const countResult = await sql`
       SELECT COUNT(*) as count FROM cs_products
@@ -38,29 +79,9 @@ export async function GET(request: NextRequest) {
         AND (${maxPrice}::numeric IS NULL OR min_price <= ${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
     `;
-    const total = parseInt(countResult[0].count);
+    const total = parseInt(countResult[0].count as string);
 
-    // Build WHERE clause params
-    const whereClause = `
-      WHERE ($1::text IS NULL OR brand = $1)
-        AND ($2::text IS NULL OR strength = $2)
-        AND ($3::numeric IS NULL OR min_price >= $3)
-        AND ($4::numeric IS NULL OR min_price <= $4)
-        AND ($5::text IS NULL OR name ILIKE $5 OR brand ILIKE $5)
-    `;
-    const params = [brand, strength, minPrice, maxPrice, searchTerm, limit, offset];
-
-    // Use function-call mode for dynamic ORDER BY (orderBy is from allowlist, safe)
-    const query = `
-      SELECT id, name, brand, image_url, format, strength,
-             min_price, max_price, retailer_count
-      FROM cs_products
-      ${whereClause}
-      ORDER BY ${orderBy}
-      LIMIT $6 OFFSET $7
-    `;
-
-    const products = await (sql as unknown as (query: string, params: unknown[]) => Promise<Record<string, unknown>[]>)(query, params);
+    const products = await fetchSorted(brand, strength, minPrice, maxPrice, searchTerm, sortKey, limit, offset);
 
     return NextResponse.json({
       cigars: products,
