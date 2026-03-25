@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sql, ensureDb } from '@/lib/db';
+import { getDb, ensureDb } from '@/lib/db';
+
+const sortMap: Record<string, string> = {
+  'price-asc': 'min_price ASC NULLS LAST, name ASC',
+  'price-desc': 'min_price DESC NULLS LAST, name ASC',
+  'name-asc': 'name ASC',
+  'name-desc': 'name DESC',
+  'retailers-desc': 'retailer_count DESC NULLS LAST, name ASC',
+  'savings-desc': '(COALESCE(max_price, 0) - COALESCE(min_price, 0)) DESC NULLS LAST, name ASC',
+  'brand-asc': 'brand ASC, name ASC',
+};
 
 export async function GET(request: NextRequest) {
   try {
     await ensureDb();
+    const sql = getDb();
     const { searchParams } = new URL(request.url);
     const brand = searchParams.get('brand');
     const strength = searchParams.get('strength');
@@ -16,9 +27,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
     const searchTerm = search ? `%${search}%` : null;
 
-    // Validate sort param
-    const validSorts = ['price-asc', 'price-desc', 'name-asc', 'name-desc', 'retailers-desc', 'savings-desc', 'brand-asc'];
-    const validSort = validSorts.includes(sort) ? sort : 'brand-asc';
+    // Validate sort - only allow known keys (prevents SQL injection)
+    const orderBy = sortMap[sort] || sortMap['brand-asc'];
 
     const countResult = await sql`
       SELECT COUNT(*) as count FROM cs_products
@@ -30,26 +40,27 @@ export async function GET(request: NextRequest) {
     `;
     const total = parseInt(countResult[0].count);
 
-    const products = await sql`
+    // Build WHERE clause params
+    const whereClause = `
+      WHERE ($1::text IS NULL OR brand = $1)
+        AND ($2::text IS NULL OR strength = $2)
+        AND ($3::numeric IS NULL OR min_price >= $3)
+        AND ($4::numeric IS NULL OR min_price <= $4)
+        AND ($5::text IS NULL OR name ILIKE $5 OR brand ILIKE $5)
+    `;
+    const params = [brand, strength, minPrice, maxPrice, searchTerm, limit, offset];
+
+    // Use function-call mode for dynamic ORDER BY (orderBy is from allowlist, safe)
+    const query = `
       SELECT id, name, brand, image_url, format, strength,
              min_price, max_price, retailer_count
-      FROM cs_products 
-      WHERE (${brand}::text IS NULL OR brand = ${brand})
-        AND (${strength}::text IS NULL OR strength = ${strength})
-        AND (${minPrice}::numeric IS NULL OR min_price >= ${minPrice})
-        AND (${maxPrice}::numeric IS NULL OR min_price <= ${maxPrice})
-        AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
-      ORDER BY
-        CASE WHEN ${validSort} = 'price-asc' THEN min_price END ASC NULLS LAST,
-        CASE WHEN ${validSort} = 'price-desc' THEN min_price END DESC NULLS LAST,
-        CASE WHEN ${validSort} = 'name-asc' THEN name END ASC,
-        CASE WHEN ${validSort} = 'name-desc' THEN name END DESC,
-        CASE WHEN ${validSort} = 'retailers-desc' THEN retailer_count END DESC NULLS LAST,
-        CASE WHEN ${validSort} = 'savings-desc' THEN COALESCE(max_price, 0) - COALESCE(min_price, 0) END DESC NULLS LAST,
-        CASE WHEN ${validSort} = 'brand-asc' THEN brand END ASC,
-        name ASC
-      LIMIT ${limit} OFFSET ${offset}
+      FROM cs_products
+      ${whereClause}
+      ORDER BY ${orderBy}
+      LIMIT $6 OFFSET $7
     `;
+
+    const products = await (sql as unknown as (query: string, params: unknown[]) => Promise<Record<string, unknown>[]>)(query, params);
 
     return NextResponse.json({
       cigars: products,
