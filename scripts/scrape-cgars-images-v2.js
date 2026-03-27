@@ -8,7 +8,8 @@ const { neon } = require('@neondatabase/serverless');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
-const sql = neon(process.env.DATABASE_URL);
+function getDb() { return neon(process.env.DATABASE_URL); }
+const sql = getDb();
 
 // New CGars category URLs (discovered from site nav March 2026)
 const categoryUrls = [
@@ -144,7 +145,7 @@ async function scrapeCategory(page, url) {
 
 async function scrape() {
   // Load products missing images
-  const products = await sql`SELECT id, name, brand FROM cs_products WHERE image_url IS NULL`;
+  const products = await sql`SELECT id, name, brand FROM cs_products WHERE image_url IS NULL OR image_url = ''`;
   
   // Build lookup with multiple normalisation strategies
   const lookup = new Map();
@@ -263,7 +264,7 @@ async function scrape() {
       if (ids) {
         for (const id of ids) {
           if (updated.has(id)) continue;
-          await sql`UPDATE cs_products SET image_url = ${prod.imageUrl} WHERE id = ${id}`;
+          await getDb()`UPDATE cs_products SET image_url = ${prod.imageUrl} WHERE id = ${id}`;
           updated.add(id);
           totalUpdated++;
           matched++;
@@ -281,12 +282,12 @@ async function scrape() {
   await browser.close();
 
   // Stats
-  const remaining = await sql`SELECT COUNT(*) as c FROM cs_products WHERE image_url IS NULL`;
+  const remaining = await getDb()`SELECT COUNT(*) as c FROM cs_products WHERE image_url IS NULL OR image_url = ''`;
   console.log(`\n✅ Updated ${totalUpdated} product images (scraped ${totalScraped} total)`);
   console.log(`📸 Still missing: ${remaining[0].c}`);
 
-  const total = await sql`
-    SELECT COUNT(*) as total, COUNT(image_url) FILTER (WHERE image_url IS NOT NULL) as with_img FROM cs_products
+  const total = await getDb()`
+    SELECT COUNT(*) as total, COUNT(image_url) FILTER (WHERE image_url IS NOT NULL AND image_url != '') as with_img FROM cs_products
   `;
   const pct = Math.round((total[0].with_img / total[0].total) * 100);
   console.log(`📊 Coverage: ${total[0].with_img}/${total[0].total} (${pct}%)`);

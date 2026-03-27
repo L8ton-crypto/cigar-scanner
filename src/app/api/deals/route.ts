@@ -11,12 +11,16 @@ export async function GET(request: NextRequest) {
     const minSavings = searchParams.get('minSavings') ? parseFloat(searchParams.get('minSavings')!) : null;
     const brand = searchParams.get('brand');
 
+    // Filter: max_price <= 3x min_price to exclude box vs single mismatches
+    // Also require savings_pct <= 70% as sanity check
     const countResult = await sql`
       SELECT COUNT(*) as count FROM cs_products
       WHERE retailer_count > 1
         AND min_price IS NOT NULL
         AND max_price IS NOT NULL
+        AND min_price > 0
         AND max_price > min_price
+        AND max_price <= (min_price * 3)
         AND (${minSavings}::numeric IS NULL OR (max_price - min_price) >= ${minSavings})
         AND (${brand}::text IS NULL OR brand = ${brand})
     `;
@@ -30,10 +34,12 @@ export async function GET(request: NextRequest) {
       WHERE retailer_count > 1
         AND min_price IS NOT NULL
         AND max_price IS NOT NULL
+        AND min_price > 0
         AND max_price > min_price
+        AND max_price <= (min_price * 3)
         AND (${minSavings}::numeric IS NULL OR (max_price - min_price) >= ${minSavings})
         AND (${brand}::text IS NULL OR brand = ${brand})
-      ORDER BY (max_price - min_price) DESC, retailer_count DESC
+      ORDER BY savings_pct DESC, (max_price - min_price) DESC, retailer_count DESC
       LIMIT ${limit} OFFSET ${offset}
     `;
 
