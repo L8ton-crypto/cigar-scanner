@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PriceAlertButton } from '@/components/PriceAlertButton';
+import { FavouriteButton } from '@/components/FavouriteButton';
 
 interface Product {
   id: number;
@@ -117,7 +118,21 @@ export default function CigarDetailPage() {
           {/* Info */}
           <div>
             <p className="text-[#c9a84c] text-lg font-medium mb-2">{product.brand}</p>
-            <h1 className="text-white text-4xl font-bold mb-6">{product.name}</h1>
+            
+            <div className="flex items-start gap-3 mb-6">
+              <h1 className="text-white text-4xl font-bold flex-1">{product.name}</h1>
+              <FavouriteButton cigar={{
+                id: product.id,
+                name: product.name,
+                brand: product.brand,
+                min_price: product.min_price,
+                max_price: product.max_price,
+                image_url: product.image_url,
+                strength: product.strength,
+                format: product.format,
+                retailer_count: product.retailer_count,
+              }} size="md" />
+            </div>
 
             {/* Specs */}
             <div className="bg-[#1a3a2a]/60 rounded-xl p-6 mb-6">

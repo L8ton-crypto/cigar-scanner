@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { FavouriteButton } from './FavouriteButton';
 
 interface Cigar {
   id: number;
@@ -61,6 +62,11 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
             <div className="text-[#c9a84c]/30 text-6xl">🚬</div>
           </div>
         )}
+        {/* Favourite button */}
+        <div className="absolute top-2 left-2 z-[1]">
+          <FavouriteButton cigar={cigar} size="sm" />
+        </div>
+        
         {/* Retailer count badge */}
         {cigar.retailer_count > 1 && (
           <div className="absolute top-2 right-2 bg-[#c9a84c] text-[#0f2419] text-xs font-bold px-2 py-1 rounded-full">

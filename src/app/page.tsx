@@ -143,6 +143,12 @@ export default function Home() {
                 <span>💰</span> Deals
               </Link>
               <Link
+                href="/favourites"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>❤️</span> Favourites
+              </Link>
+              <Link
                 href="/alerts"
                 className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
               >
