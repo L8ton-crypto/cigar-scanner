@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const brands = await sql`SELECT DISTINCT brand FROM cs_products ORDER BY brand`;
   const products = await sql`SELECT id FROM cs_products ORDER BY id`;
   
-  const baseUrl = 'https://cigar-scanner-app.vercel.app';
+  const baseUrl = 'https://cigar-scanner.vercel.app';
   
   return [
     {

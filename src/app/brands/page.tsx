@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "All Cigar Brands - UK Price Comparison | Hearth & Leaf",
       description: "Browse all cigar brands available in the UK. Compare prices across multiple retailers.",
       type: 'website',
-      url: 'https://cigar-scanner-app.vercel.app/brands'
+      url: 'https://cigar-scanner.vercel.app/brands'
     }
   };
 }

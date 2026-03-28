@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: `${brandName} Cigars - UK Prices & Reviews | Hearth & Leaf`,
       description: `Compare prices for ${brandName} cigars across UK retailers. Find the best deals on ${count} ${brandName} products.`,
       type: 'website',
-      url: `https://cigar-scanner-app.vercel.app/brand/${slug}`
+      url: `https://cigar-scanner.vercel.app/brand/${slug}`
     }
   };
 }
@@ -111,7 +111,7 @@ export default async function BrandPage({ params }: PageProps) {
         "@type": "Product",
         "name": p.name,
         "brand": { "@type": "Brand", "name": p.brand },
-        "url": `https://cigar-scanner-app.vercel.app/cigar/${p.id}`,
+        "url": `https://cigar-scanner.vercel.app/cigar/${p.id}`,
         "offers": {
           "@type": "AggregateOffer",
           "lowPrice": Number(p.min_price),
