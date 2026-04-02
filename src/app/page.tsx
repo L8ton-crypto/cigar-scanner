@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { CigarGrid } from '@/components/CigarGrid';
 import { SearchFilters } from '@/components/SearchFilters';
 import { ScanModal } from '@/components/ScanModal';
+import { RefreshBadge } from '@/components/RefreshBadge';
 import { getRecentScans, type ScanRecord } from '@/lib/scanHistory';
 
 interface Cigar {
@@ -149,6 +150,12 @@ export default function Home() {
                 <span>💰</span> Deals
               </Link>
               <Link
+                href="/price-changes"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>📊</span> Price Changes
+              </Link>
+              <Link
                 href="/favourites"
                 className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
               >
@@ -196,9 +203,12 @@ export default function Home() {
             </span>
           </h1>
           
-          <p className="text-xl text-[#8aaa7a] mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-[#8aaa7a] mb-4 max-w-2xl mx-auto">
             Identify any cigar. Find the best price.
           </p>
+          <div className="mb-6">
+            <RefreshBadge />
+          </div>
 
           {/* Scan Button */}
           <button

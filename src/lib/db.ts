@@ -42,5 +42,33 @@ export async function ensureDb() {
   await db`
     CREATE INDEX IF NOT EXISTS idx_cs_alerts_active ON cs_alerts(active) WHERE active = true
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_scrape_log (
+      id SERIAL PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      retailer TEXT NOT NULL,
+      started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      completed_at TIMESTAMP WITH TIME ZONE,
+      status TEXT DEFAULT 'running',
+      products_scraped INTEGER DEFAULT 0,
+      prices_updated INTEGER DEFAULT 0,
+      prices_added INTEGER DEFAULT 0,
+      prices_removed INTEGER DEFAULT 0,
+      new_products INTEGER DEFAULT 0,
+      errors TEXT[],
+      duration_ms INTEGER
+    )
+  `;
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_price_changes (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER,
+      retailer TEXT NOT NULL,
+      old_price NUMERIC(10,2),
+      new_price NUMERIC(10,2),
+      change_type TEXT NOT NULL,
+      changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
   initialized = true;
 }
