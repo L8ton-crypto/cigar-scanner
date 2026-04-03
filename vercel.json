@@ -3,6 +3,30 @@
     {
       "path": "/api/alerts/check",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/refresh?retailer=gq",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/refresh?retailer=house-of-cigars",
+      "schedule": "5 3 * * 1"
+    },
+    {
+      "path": "/api/refresh?retailer=sautter",
+      "schedule": "10 3 * * 1"
+    },
+    {
+      "path": "/api/refresh?retailer=rebellion",
+      "schedule": "15 3 * * 1"
+    },
+    {
+      "path": "/api/refresh?retailer=turmeaus",
+      "schedule": "20 3 * * 1"
+    },
+    {
+      "path": "/api/refresh?retailer=smoke-king",
+      "schedule": "25 3 * * 1"
     }
   ]
 }
