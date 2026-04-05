@@ -14,7 +14,10 @@ export async function GET() {
         completed_at,
         products_scraped,
         prices_updated,
+        COALESCE(prices_added, 0) as prices_added,
+        COALESCE(new_products, 0) as new_products,
         prices_removed,
+        errors,
         duration_ms
       FROM cs_scrape_log
       ORDER BY retailer, started_at DESC
@@ -49,9 +52,22 @@ export async function GET() {
       WHERE status = 'success'
     `;
 
+    // Format retailer data for the dashboard
+    const formattedRetailers = latest.map((retailer: any) => ({
+      retailer: retailer.retailer,
+      lastRun: retailer.completed_at,
+      status: retailer.status === 'success' ? 'success' : retailer.status === 'error' ? 'error' : 'never',
+      productsScraped: parseInt(retailer.products_scraped || '0'),
+      pricesUpdated: parseInt(retailer.prices_updated || '0'),
+      pricesAdded: parseInt(retailer.prices_added || '0'),
+      newProducts: parseInt(retailer.new_products || '0'),
+      errors: retailer.errors || [],
+      duration: parseInt(retailer.duration_ms || '0')
+    }));
+
     return NextResponse.json({
       lastRefresh: lastRun[0]?.last_run || null,
-      retailers: latest,
+      retailers: formattedRetailers,
       recentChanges,
       stats: {
         totalProducts: parseInt(totalProducts[0].count as string),

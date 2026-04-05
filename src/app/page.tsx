@@ -178,6 +178,12 @@ export default function Home() {
                   </span>
                 )}
               </Link>
+              <Link
+                href="/refresh"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>📊</span> Data Health
+              </Link>
             </nav>
           </div>
         </div>

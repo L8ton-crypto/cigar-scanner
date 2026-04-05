@@ -14,6 +14,8 @@ export interface ScrapingStats {
   productsScraped: number;
   productsVerified: number;
   pricesUpdated: number;
+  pricesAdded: number;
+  newProducts: number;
   potentialRemovals: number;
   errors: string[];
 }

@@ -35,6 +35,8 @@ async function refreshRetailer(
     productsScraped: 0, 
     productsVerified: 0, 
     pricesUpdated: 0, 
+    pricesAdded: 0,
+    newProducts: 0,
     potentialRemovals: 0, 
     errors: [] 
   };
@@ -81,6 +83,8 @@ async function refreshRetailer(
           status = ${stats.errors.length > 0 ? 'error' : 'success'},
           products_scraped = ${stats.productsScraped},
           prices_updated = ${stats.pricesUpdated},
+          prices_added = ${stats.pricesAdded},
+          new_products = ${stats.newProducts},
           prices_removed = ${stats.potentialRemovals},
           errors = ${stats.errors.length > 0 ? stats.errors : null},
           duration_ms = ${duration}
@@ -152,6 +156,8 @@ export async function GET(request: NextRequest) {
         totalScraped: results.reduce((sum, r) => sum + r.productsScraped, 0),
         totalVerified: results.reduce((sum, r) => sum + r.productsVerified, 0),
         totalUpdated: results.reduce((sum, r) => sum + r.pricesUpdated, 0),
+        totalAdded: results.reduce((sum, r) => sum + r.pricesAdded, 0),
+        totalNewProducts: results.reduce((sum, r) => sum + r.newProducts, 0),
         totalRemovals: results.reduce((sum, r) => sum + r.potentialRemovals, 0),
         totalErrors: results.reduce((sum, r) => sum + r.errors.length, 0)
       },
