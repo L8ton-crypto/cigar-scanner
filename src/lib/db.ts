@@ -70,5 +70,25 @@ export async function ensureDb() {
       changed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_clicks (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER,
+      retailer TEXT NOT NULL,
+      url TEXT NOT NULL,
+      clicked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      user_agent TEXT,
+      referer TEXT
+    )
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_clicks_retailer ON cs_clicks(retailer)
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_clicks_product ON cs_clicks(product_id)
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_clicks_date ON cs_clicks(clicked_at)
+  `;
   initialized = true;
 }

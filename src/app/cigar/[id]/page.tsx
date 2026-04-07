@@ -213,16 +213,20 @@ export default function CigarDetailPage() {
                         </span>
                       </div>
                       <a
-                        href={price.url}
+                        href={`/api/click?pid=${product.id}&retailer=${encodeURIComponent(price.retailer)}&url=${encodeURIComponent(price.url)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        className={`px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
                           isCheapest 
                             ? 'bg-green-500 hover:bg-green-600 text-white' 
                             : 'bg-[#c9a84c] hover:bg-[#b8974a] text-[#0f2419]'
                         }`}
                       >
                         Buy →
+                        <svg className="w-3 h-3 opacity-60" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M6.194 12.753a.75.75 0 001.06.053L16.5 4.44v2.81a.75.75 0 001.5 0v-4.5a.75.75 0 00-.75-.75h-4.5a.75.75 0 000 1.5h2.553l-9.056 8.194a.75.75 0 00-.053 1.06z" clipRule="evenodd" />
+                        </svg>
                       </a>
                     </div>
                   </div>
@@ -259,6 +263,22 @@ export default function CigarDetailPage() {
                 </Link>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Affiliate Disclosure */}
+        {prices.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-[#c9a84c]/20">
+            <p className="text-[#8aaa7a] text-sm text-center">
+              <span className="inline-flex items-center gap-1">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                Affiliate Disclosure
+              </span>
+              <br />
+              We may earn a commission from purchases made through our links. This helps support CigarScanner at no extra cost to you.
+            </p>
           </div>
         )}
       </main>
