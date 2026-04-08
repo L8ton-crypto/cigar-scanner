@@ -90,5 +90,18 @@ export async function ensureDb() {
   await db`
     CREATE INDEX IF NOT EXISTS idx_cs_clicks_date ON cs_clicks(clicked_at)
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_price_history (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL,
+      retailer TEXT NOT NULL,
+      price NUMERIC(10,2) NOT NULL,
+      recorded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_price_history_lookup 
+      ON cs_price_history(product_id, retailer, recorded_at)
+  `;
   initialized = true;
 }

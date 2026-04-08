@@ -11,43 +11,99 @@ async function fetchSorted(
 ) {
   switch (sortKey) {
     case 'price-asc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY min_price ASC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
     case 'price-desc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY min_price DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
     case 'name-asc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY name ASC LIMIT ${limit} OFFSET ${offset}`;
     case 'name-desc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY name DESC LIMIT ${limit} OFFSET ${offset}`;
     case 'retailers-desc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY retailer_count DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
     case 'savings-desc':
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})
         ORDER BY (COALESCE(max_price,0)-COALESCE(min_price,0)) DESC NULLS LAST, name ASC LIMIT ${limit} OFFSET ${offset}`;
     default:
-      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count FROM cs_products
+      return sql`SELECT id,name,brand,image_url,format,strength,min_price,max_price,retailer_count,
+        EXISTS (
+          SELECT 1 FROM cs_price_changes 
+          WHERE product_id = cs_products.id 
+          AND change_type = 'price_change' 
+          AND new_price < old_price 
+          AND changed_at > NOW() - INTERVAL '7 days'
+        ) as recent_drop
+        FROM cs_products
         WHERE (${brand}::text IS NULL OR brand=${brand}) AND (${strength}::text IS NULL OR strength=${strength})
         AND (${minPrice}::numeric IS NULL OR min_price>=${minPrice}) AND (${maxPrice}::numeric IS NULL OR min_price<=${maxPrice})
         AND (${searchTerm}::text IS NULL OR name ILIKE ${searchTerm} OR brand ILIKE ${searchTerm})

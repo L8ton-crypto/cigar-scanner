@@ -33,6 +33,32 @@ export async function GET(
       ORDER BY price ASC
     `;
 
+    // Get price history for the last 90 days
+    const priceHistoryRaw = await sql`
+      SELECT retailer, price, recorded_at::date as date
+      FROM cs_price_history
+      WHERE product_id = ${productId}
+      AND recorded_at > NOW() - INTERVAL '90 days'
+      ORDER BY retailer, recorded_at
+    `;
+
+    // Group price history by retailer
+    const priceHistoryMap = new Map<string, Array<{ date: string; price: number }>>();
+    for (const row of priceHistoryRaw) {
+      if (!priceHistoryMap.has(row.retailer)) {
+        priceHistoryMap.set(row.retailer, []);
+      }
+      priceHistoryMap.get(row.retailer)!.push({
+        date: row.date,
+        price: Number(row.price)
+      });
+    }
+
+    const priceHistory = Array.from(priceHistoryMap.entries()).map(([retailer, data]) => ({
+      retailer,
+      data
+    }));
+
     // Get related products (same brand)
     const related = await sql`
       SELECT id, name, brand, image_url, min_price, strength, format, retailer_count
@@ -45,7 +71,8 @@ export async function GET(
     return NextResponse.json({
       cigar: product,
       prices,
-      related
+      related,
+      priceHistory
     });
   } catch (error) {
     console.error('Error fetching product:', error);

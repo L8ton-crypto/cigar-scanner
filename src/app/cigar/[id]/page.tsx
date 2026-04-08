@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PriceAlertButton } from '@/components/PriceAlertButton';
 import { FavouriteButton } from '@/components/FavouriteButton';
+import { Sparkline } from '@/components/Sparkline';
 
 interface Product {
   id: number;
@@ -45,11 +46,17 @@ interface RelatedProduct {
   retailer_count: number;
 }
 
+interface PriceHistoryData {
+  retailer: string;
+  data: { date: string; price: number }[];
+}
+
 export default function CigarDetailPage() {
   const params = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [prices, setPrices] = useState<Price[]>([]);
   const [related, setRelated] = useState<RelatedProduct[]>([]);
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -60,6 +67,7 @@ export default function CigarDetailPage() {
           setProduct(data.cigar);
           setPrices(data.prices || []);
           setRelated(data.related || []);
+          setPriceHistory(data.priceHistory || []);
           setLoading(false);
         })
         .catch(() => setLoading(false));
@@ -228,6 +236,70 @@ export default function CigarDetailPage() {
                           <path fillRule="evenodd" d="M6.194 12.753a.75.75 0 001.06.053L16.5 4.44v2.81a.75.75 0 001.5 0v-4.5a.75.75 0 00-.75-.75h-4.5a.75.75 0 000 1.5h2.553l-9.056 8.194a.75.75 0 00-.053 1.06z" clipRule="evenodd" />
                         </svg>
                       </a>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Price History */}
+        <div className="bg-[#1a3a2a]/60 rounded-2xl p-8 mb-12">
+          <h2 className="text-[#c9a84c] text-2xl font-bold mb-6">
+            📈 Price History
+          </h2>
+          
+          {priceHistory.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-[#c9a84c]/30 text-4xl mb-3">📊</div>
+              <p className="text-[#8aaa7a]">Price tracking started - check back soon</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {priceHistory.map((retailerHistory, i) => {
+                const currentPrice = prices.find(p => p.retailer === retailerHistory.retailer);
+                const firstPrice = retailerHistory.data[0]?.price;
+                const lastPrice = retailerHistory.data[retailerHistory.data.length - 1]?.price;
+                
+                let trend = 'neutral';
+                let trendPercent = 0;
+                if (firstPrice && lastPrice && firstPrice !== lastPrice) {
+                  trendPercent = ((lastPrice - firstPrice) / firstPrice) * 100;
+                  trend = lastPrice < firstPrice ? 'down' : 'up';
+                }
+                
+                return (
+                  <div 
+                    key={i} 
+                    className="flex items-center justify-between p-4 rounded-xl border border-[#c9a84c]/10 bg-[#0f2419]/50 hover:bg-[#0f2419] transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <p className="text-white font-medium">{retailerHistory.retailer}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Sparkline 
+                            data={retailerHistory.data}
+                            width={100}
+                            height={24}
+                          />
+                          {trend !== 'neutral' && (
+                            <span className={`text-xs font-medium ${
+                              trend === 'down' ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                              {trend === 'down' ? '↓' : '↑'} {Math.abs(trendPercent).toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      {currentPrice && (
+                        <span className="text-[#c9a84c] text-xl font-bold">
+                          £{Number(currentPrice.price).toFixed(2)}
+                        </span>
+                      )}
                     </div>
                   </div>
                 );

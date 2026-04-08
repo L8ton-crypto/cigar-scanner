@@ -14,6 +14,7 @@ interface Cigar {
   strength?: string;
   format?: string;
   retailer_count: number;
+  recent_drop?: boolean;
 }
 
 interface Pagination {
@@ -66,6 +67,13 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
         <div className="absolute top-2 left-2 z-[1]">
           <FavouriteButton cigar={cigar} size="sm" />
         </div>
+        
+        {/* Price drop badge */}
+        {cigar.recent_drop && (
+          <div className="absolute top-2 left-2 translate-y-8 bg-green-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-[1]">
+            ↓ Price Drop
+          </div>
+        )}
         
         {/* Retailer count badge */}
         {cigar.retailer_count > 1 && (

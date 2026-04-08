@@ -30,7 +30,22 @@
 - **/api/refresh-status** - Retailer status monitoring
 - **/api/alerts** - Price alerts management
 
-## New Features Added (2026-04-05)
+## New Features Added (2026-04-08)
+
+### Price History & Trends
+1. **Price Snapshots** - Automatic recording of price history during refresh cycles
+2. **90-Day Tracking** - Historical price data stored for trend analysis
+3. **Sparkline Charts** - Visual price trend indicators on product detail pages
+4. **Price Drop Badges** - Green "Price Drop" badges on products with recent decreases (7 days)
+5. **Trend Analysis** - Percentage change indicators with up/down arrows
+
+### Enhanced User Experience
+- **Price History Section** - New section on cigar detail pages showing retailer price trends
+- **Visual Indicators** - Sparkline charts for quick trend identification
+- **Recent Drop Detection** - Automatic flagging of products with recent price reductions
+- **Mobile Responsive** - Clean sparklines optimized for mobile viewing
+
+## Previous Features (2026-04-05)
 
 ### Enhanced Refresh System
 1. **New Product Detection** - Automatically detects and adds new cigars from scrapes
@@ -53,7 +68,8 @@
 ### Core Tables
 - **cs_products** - Product catalog (name, brand, prices, retailer_count)
 - **cs_prices** - Price data per retailer (price, url, last_verified)
-- **cs_scrape_log** - Refresh logging (NEW: prices_added, new_products columns)
+- **cs_price_history** - Price snapshots over time (NEW: 90-day historical tracking)
+- **cs_scrape_log** - Refresh logging (prices_added, new_products columns)
 - **cs_price_changes** - Price change tracking (price_change, new_product types)
 
 ### Scraping & Alerts
@@ -82,8 +98,12 @@
 - **Mobile-first** - Responsive design throughout
 
 ## Recent Enhancements
-- Added automatic new product detection from scrapers
+- **Price History Tracking** - Automatic snapshots during refresh cycles with 90-day retention
+- **Visual Trend Analysis** - SVG sparkline charts showing price movements over time
+- **Price Drop Detection** - Real-time flagging of products with recent price decreases
+- **Enhanced Product Grid** - Visual badges for recently reduced products
+- **Improved Detail Pages** - Comprehensive price history section with trend indicators
+- Automatic new product detection from scrapers
 - Enhanced refresh system with fuzzy matching and safety limits  
 - Built comprehensive data health monitoring dashboard
 - Improved price change tracking with detailed statistics
-- Added navigation link for data health monitoring

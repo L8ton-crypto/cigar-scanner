@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { sql, ensureDb } from '@/lib/db';
 import { ScrapingStats } from '@/lib/scrapers/index';
-import { compareAndUpdate, recalcProductAggregates } from '@/lib/refresh-engine';
+import { compareAndUpdate, recalcProductAggregates, recordPriceSnapshots } from '@/lib/refresh-engine';
 
 // Import all scrapers
 import { scrapeGQ } from '@/lib/scrapers/gq';
@@ -66,6 +66,19 @@ async function refreshRetailer(
       stats.errors.push('No products scraped - possible site issue');
     } else {
       await compareAndUpdate(retailer.name, products, stats, dryRun);
+      
+      // Record price snapshots after successful refresh
+      if (!dryRun && stats.errors.length === 0) {
+        try {
+          const snapshotCount = await recordPriceSnapshots(retailer.name);
+          if (snapshotCount > 0) {
+            console.log(`Recorded ${snapshotCount} price snapshots for ${retailer.name}`);
+          }
+        } catch (e) {
+          const errorMessage = e instanceof Error ? e.message : String(e);
+          stats.errors.push(`Snapshot error: ${errorMessage.substring(0, 60)}`);
+        }
+      }
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);

@@ -303,6 +303,66 @@ export async function compareAndUpdate(
   return stats;
 }
 
+export async function recordPriceSnapshots(retailerName: string): Promise<number> {
+  await ensureDb();
+  
+  // Check if we already have snapshots for this retailer in the last 12 hours
+  const recentSnapshotCount = await sql`
+    SELECT COUNT(*) as count 
+    FROM cs_price_history 
+    WHERE retailer = ${retailerName} 
+    AND recorded_at > NOW() - INTERVAL '12 hours'
+  `;
+  
+  if (parseInt(recentSnapshotCount[0].count as string) > 0) {
+    // Skip if we already have recent snapshots
+    return 0;
+  }
+  
+  // Check if this is the first run for this retailer (for backfill)
+  const existingCount = await sql`
+    SELECT COUNT(*) as count 
+    FROM cs_price_history 
+    WHERE retailer = ${retailerName}
+  `;
+  
+  const isFirstRun = parseInt(existingCount[0].count as string) === 0;
+  const now = new Date();
+  
+  // Get all current prices for this retailer
+  const currentPrices = await sql`
+    SELECT product_id, price 
+    FROM cs_prices 
+    WHERE retailer = ${retailerName}
+  `;
+  
+  if (currentPrices.length === 0) {
+    return 0;
+  }
+  
+  let insertCount = 0;
+  
+  // Insert in chunks of 100 to avoid connection limits
+  for (let i = 0; i < currentPrices.length; i += 100) {
+    const chunk = currentPrices.slice(i, i + 100);
+    
+    try {
+      for (const price of chunk) {
+        await sql`
+          INSERT INTO cs_price_history (product_id, retailer, price, recorded_at)
+          VALUES (${price.product_id}, ${retailerName}, ${price.price}, ${now})
+        `;
+        insertCount++;
+      }
+    } catch (e) {
+      console.error('Error recording price snapshots:', e);
+      break;
+    }
+  }
+  
+  return insertCount;
+}
+
 export async function recalcProductAggregates(dryRun = false): Promise<void> {
   if (!dryRun) {
     await ensureDb();
