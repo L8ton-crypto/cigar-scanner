@@ -1,0 +1,85 @@
+name: Update Arc Forge Board
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  update-board:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract task info from commit
+        id: task
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+          # Extract app name from commit message (e.g., "feat: CigarScanner — sort options")
+          APP_NAME=$(echo "$COMMIT_MSG" | grep -oP '(?<=feat:|fix:|chore:)\s*\K[^—–-]+' | head -1 | xargs)
+          echo "app_name=$APP_NAME" >> $GITHUB_OUTPUT
+
+      - name: Fetch board and move matching task to Review
+        env:
+          ARC_FORGE_TOKEN: ${{ secrets.ARC_FORGE_TOKEN }}
+        run: |
+          if [ -z "$ARC_FORGE_TOKEN" ]; then
+            echo "No ARC_FORGE_TOKEN secret set — skipping board update"
+            exit 0
+          fi
+
+          echo "Fetching board..."
+          BOARD=$(curl -sf "https://arc-forge-rho.vercel.app/api/board")
+          if [ $? -ne 0 ]; then
+            echo "Failed to fetch board"
+            exit 0
+          fi
+
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+
+          # Find tasks matching this repo or commit keywords
+          TASK_ID=$(echo "$BOARD" | node -e "
+            const board = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const cols = board.columns || [];
+            const commitMsg = process.argv[1].toLowerCase();
+            const repoName = process.argv[2].toLowerCase();
+
+            for (const col of cols) {
+              if (col.id === 'review' || col.id === 'complete') continue;
+              for (const task of (col.tasks || [])) {
+                const title = (task.title || '').toLowerCase();
+                const desc = (task.description || '').toLowerCase();
+                // Match by repo name, or keywords from commit message
+                if (title.includes(repoName) || title.includes('cigar') ||
+                    commitMsg.includes(title.split(' ')[0])) {
+                  console.log(task.id);
+                  process.exit(0);
+                }
+              }
+            }
+            console.log('');
+          " "$COMMIT_MSG" "$REPO_NAME")
+
+          if [ -n "$TASK_ID" ]; then
+            echo "Moving task $TASK_ID to Review..."
+            curl -sf -X POST "https://arc-forge-rho.vercel.app/api/board/move" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $ARC_FORGE_TOKEN" \
+              -d "{\"taskId\": \"$TASK_ID\", \"toColumn\": \"review\"}"
+            echo "Done — task moved to Review"
+          else
+            echo "No matching task found on board — adding new task to Review"
+            FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
+            curl -sf -X POST "https://arc-forge-rho.vercel.app/api/board/add" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $ARC_FORGE_TOKEN" \
+              -d "{
+                \"task\": {
+                  \"title\": \"$FIRST_LINE\",
+                  \"description\": \"Auto-deployed via GitHub push. Commit: ${{ github.sha }}\",
+                  \"priority\": \"medium\",
+                  \"tags\": [\"overnight-build\", \"$REPO_NAME\"]
+                },
+                \"column\": \"review\"
+              }"
+            echo "Done — new task added to Review"
+          fi
