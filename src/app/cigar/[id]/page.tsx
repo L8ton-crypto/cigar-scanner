@@ -22,6 +22,7 @@ interface Product {
   min_price: number;
   max_price: number;
   retailer_count: number;
+  best_price_per_inch?: number | null;
 }
 
 interface Price {
@@ -33,6 +34,9 @@ interface Price {
   available: boolean;
   url: string;
   source_name: string;
+  pack_count?: number;
+  pack_kind?: string;
+  price_per_inch?: number | null;
 }
 
 interface RelatedProduct {
@@ -149,9 +153,30 @@ export default function CigarDetailPage() {
                 {product.format && <div><span className="text-[#8aaa7a]">Format:</span> <span className="text-white">{product.format}</span></div>}
                 {product.strength && <div><span className="text-[#8aaa7a]">Strength:</span> <span className="text-white">{product.strength}</span></div>}
                 {product.country && <div><span className="text-[#8aaa7a]">Origin:</span> <span className="text-white">{product.country}</span></div>}
-                {product.length_mm && <div><span className="text-[#8aaa7a]">Length:</span> <span className="text-white">{product.length_mm}mm</span></div>}
+                {product.length_mm && (
+                  <div>
+                    <span className="text-[#8aaa7a]">Length:</span>{' '}
+                    <span className="text-white">
+                      {product.length_mm}mm ({(product.length_mm / 25.4).toFixed(1)}&quot;)
+                    </span>
+                  </div>
+                )}
                 {product.ring_gauge && <div><span className="text-[#8aaa7a]">Ring Gauge:</span> <span className="text-white">{product.ring_gauge}</span></div>}
+                {product.best_price_per_inch != null && (
+                  <div className="col-span-2 pt-2 mt-1 border-t border-[#c9a84c]/10">
+                    <span className="text-[#8aaa7a]">Best price per inch:</span>{' '}
+                    <span className="text-[#c9a84c] font-semibold">
+                      £{product.best_price_per_inch.toFixed(2)}
+                    </span>
+                    <span className="text-[#8aaa7a] text-xs ml-2">per stick</span>
+                  </div>
+                )}
               </div>
+              {!product.length_mm && (
+                <p className="text-[#8aaa7a] text-xs mt-3">
+                  Dimensions unknown - price per inch requires length.
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -219,6 +244,16 @@ export default function CigarDetailPage() {
                         <span className={`text-2xl font-bold ${isCheapest ? 'text-green-400' : 'text-[#c9a84c]'}`}>
                           £{Number(price.price).toFixed(2)}
                         </span>
+                        {price.pack_count && price.pack_count > 1 && (
+                          <p className="text-[#8aaa7a] text-xs mt-0.5">
+                            £{(Number(price.price) / price.pack_count).toFixed(2)} / stick
+                          </p>
+                        )}
+                        {price.price_per_inch != null && (
+                          <p className="text-[#8aaa7a] text-xs">
+                            £{price.price_per_inch.toFixed(2)} / inch
+                          </p>
+                        )}
                       </div>
                       <a
                         href={`/api/click?pid=${product.id}&retailer=${encodeURIComponent(price.retailer)}&url=${encodeURIComponent(price.url)}`}

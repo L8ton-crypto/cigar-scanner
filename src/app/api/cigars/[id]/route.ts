@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { calculatePricePerInch, parsePackCount } from '@/lib/cigar-dimensions';
 
 export async function GET(
   request: NextRequest,
@@ -68,11 +69,39 @@ export async function GET(
       LIMIT 6
     `;
 
+    // Compute price-per-inch per retailer when dimensions are known.
+    // We infer pack count from each retailer's source_name when available,
+    // falling back to the canonical product name.
+    const lengthMm = product.length_mm ? Number(product.length_mm) : null;
+    const pricesEnriched = prices.map((p) => {
+      const nameForPack = (p.source_name as string | null) || (product.name as string);
+      const pack = parsePackCount(nameForPack);
+      const pricePerInch = lengthMm
+        ? calculatePricePerInch(Number(p.price), lengthMm, pack.count)
+        : null;
+      return {
+        ...p,
+        pack_count: pack.count,
+        pack_kind: pack.kind,
+        price_per_inch: pricePerInch,
+      };
+    });
+
+    let bestPricePerInch: number | null = null;
+    for (const p of pricesEnriched) {
+      if (p.price_per_inch != null && (bestPricePerInch == null || p.price_per_inch < bestPricePerInch)) {
+        bestPricePerInch = p.price_per_inch;
+      }
+    }
+
     return NextResponse.json({
-      cigar: product,
-      prices,
+      cigar: {
+        ...product,
+        best_price_per_inch: bestPricePerInch,
+      },
+      prices: pricesEnriched,
       related,
-      priceHistory
+      priceHistory,
     });
   } catch (error) {
     console.error('Error fetching product:', error);
