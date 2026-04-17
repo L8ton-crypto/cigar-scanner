@@ -5,33 +5,15 @@ import { parseDimensionsFromName } from '@/lib/cigar-dimensions';
 export const maxDuration = 300;
 export const dynamic = 'force-dynamic';
 
-/**
- * Admin endpoint: populates length_mm / ring_gauge on cs_products where
- * they are currently null, using the dimension parser (vitola names +
- * explicit patterns in name and description).
- *
- * Auth: Authorization: Bearer <CRON_SECRET>
- *
- * Query params:
- *   - limit  (number, default 500, max 2000) - how many rows to process
- *   - dryRun (boolean, default false) - don't write, just return stats
- *   - force  (boolean, default false) - re-populate rows even if values exist
- *
- * Response: { processed, updated, skipped, stats, sample }
- */
-export async function POST(request: NextRequest) {
-  try {
-    // Auth
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const token = authHeader.slice(7);
-    if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+function checkAuth(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
+  const token = authHeader.slice(7);
+  return !!process.env.CRON_SECRET && token === process.env.CRON_SECRET;
+}
 
-    await ensureDb();
+async function runPopulate(request: NextRequest) {
+  await ensureDb();
 
     const url = new URL(request.url);
     const limit = Math.min(
@@ -123,27 +105,47 @@ export async function POST(request: NextRequest) {
       ...stats,
       sample,
     });
+}
+
+/**
+ * POST /api/admin/populate-dimensions
+ *
+ * Backfill length_mm / ring_gauge on cs_products using the dimension parser.
+ * Auth: Authorization: Bearer <CRON_SECRET>
+ *
+ * Query params:
+ *   - limit  (number, default 500, max 2000)
+ *   - dryRun (boolean, default false)
+ *   - force  (boolean, default false)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    if (!checkAuth(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    return await runPopulate(request);
   } catch (error) {
-    console.error('populate-dimensions error:', error);
-    return NextResponse.json(
-      { error: 'Failed to populate dimensions' },
-      { status: 500 }
-    );
+    console.error('populate-dimensions POST error:', error);
+    return NextResponse.json({ error: 'Failed to populate dimensions' }, { status: 500 });
   }
 }
 
-/** GET - returns coverage stats only (auth required) */
+/**
+ * GET /api/admin/populate-dimensions
+ *
+ * - Without ?run=true, returns coverage stats only.
+ * - With ?run=true, runs the populate (used by Vercel cron which fires GET).
+ * Auth: Authorization: Bearer <CRON_SECRET>
+ */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!checkAuth(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const token = authHeader.slice(7);
-    if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const url = new URL(request.url);
+    if (url.searchParams.get('run') === 'true') {
+      return await runPopulate(request);
     }
-
     await ensureDb();
     const stats = await sql`
       SELECT

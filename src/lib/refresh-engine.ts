@@ -5,6 +5,7 @@
 
 import { sql, ensureDb } from './db';
 import { ScrapedProduct, ScrapingStats, normalise, isCigar } from './scrapers/index';
+import { parseDimensionsFromName } from './cigar-dimensions';
 
 interface ExistingPrice {
   price_id: number;
@@ -215,10 +216,11 @@ export async function compareAndUpdate(
             // Existing product, new price entry
             productId = (newProd.scraped as any).productId;
           } else {
-            // Truly new product
+            // Truly new product - auto-derive dimensions from the name
+            const dims = parseDimensionsFromName(newProd.name);
             const productResult = await sql`
-              INSERT INTO cs_products (name, brand, created_at)
-              VALUES (${newProd.name}, ${newProd.brand}, ${now})
+              INSERT INTO cs_products (name, brand, length_mm, ring_gauge, created_at)
+              VALUES (${newProd.name}, ${newProd.brand}, ${dims.length_mm ?? null}, ${dims.ring_gauge ?? null}, ${now})
               RETURNING id
             `;
             productId = productResult[0].id as number;
