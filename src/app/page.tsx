@@ -150,6 +150,12 @@ export default function Home() {
                 <span>💰</span> Deals
               </Link>
               <Link
+                href="/retailers"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
+              >
+                <span>🏬</span> Retailers
+              </Link>
+              <Link
                 href="/price-changes"
                 className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors flex items-center gap-1.5"
               >

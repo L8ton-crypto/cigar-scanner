@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { PriceAlertButton } from '@/components/PriceAlertButton';
 import { FavouriteButton } from '@/components/FavouriteButton';
 import { Sparkline } from '@/components/Sparkline';
+import { TrustBadge } from '@/components/TrustBadge';
 
 interface Product {
   id: number;
@@ -230,7 +231,10 @@ export default function CigarDetailPage() {
                         </span>
                       )}
                       <div>
-                        <p className="text-white font-medium">{price.retailer}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white font-medium">{price.retailer}</p>
+                          <TrustBadge retailer={price.retailer} />
+                        </div>
                         <p className="text-[#8aaa7a] text-xs mt-0.5">{price.source_name}</p>
                       </div>
                     </div>
@@ -311,9 +315,12 @@ export default function CigarDetailPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="text-white font-medium">{retailerHistory.retailer}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-white font-medium">{retailerHistory.retailer}</p>
+                          <TrustBadge retailer={retailerHistory.retailer} />
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <Sparkline 
+                          <Sparkline
                             data={retailerHistory.data}
                             width={100}
                             height={24}
