@@ -122,6 +122,12 @@ export default function RefreshDashboard() {
             </div>
             <nav className="flex items-center gap-4">
               <Link
+                href="/admin/stale"
+                className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors"
+              >
+                Stale Detection
+              </Link>
+              <Link
                 href="/"
                 className="text-[#8aaa7a] hover:text-[#c9a84c] text-sm transition-colors"
               >

@@ -26,11 +26,14 @@ export async function GET(
 
     const product = products[0];
 
-    // Get all prices for this product
+    // Get all prices for this product, excluding stale ones
+    // (last_verified > 30 days ago, or url_status returned 4xx/5xx).
     const prices = await sql`
       SELECT retailer, retailer_url, price, original_price, currency, available, url, source_name
-      FROM cs_prices 
+      FROM cs_prices
       WHERE product_id = ${productId}
+        AND (last_verified IS NULL OR last_verified > NOW() - INTERVAL '30 days')
+        AND (url_status IS NULL OR url_status < 400)
       ORDER BY price ASC
     `;
 

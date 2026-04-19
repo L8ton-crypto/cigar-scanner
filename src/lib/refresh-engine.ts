@@ -243,23 +243,25 @@ export async function compareAndUpdate(
       }
       
       // Batch price updates in chunks of 50
+      // Clear url_status on successful re-scrape - if the scraper found it, the URL is live
       for (let i = 0; i < priceUpdates.length; i += 50) {
         const batch = priceUpdates.slice(i, i + 50);
         for (const u of batch) {
           try {
-            await sql`UPDATE cs_prices SET price = ${u.price}, scraped_at = ${now}, last_verified = ${now} WHERE id = ${u.id}`;
+            await sql`UPDATE cs_prices SET price = ${u.price}, scraped_at = ${now}, last_verified = ${now}, url_status = NULL WHERE id = ${u.id}`;
           } catch (e) {
             const errorMessage = e instanceof Error ? e.message : String(e);
             stats.errors.push(`Update error: ${errorMessage.substring(0, 60)}`);
           }
         }
       }
-      
+
       // Batch verify updates in chunks of 100
+      // Same here - successful scraper visit means URL is healthy
       for (let i = 0; i < verifyUpdates.length; i += 100) {
         const ids = verifyUpdates.slice(i, i + 100);
         try {
-          await sql`UPDATE cs_prices SET last_verified = ${now} WHERE id = ANY(${ids})`;
+          await sql`UPDATE cs_prices SET last_verified = ${now}, url_status = NULL WHERE id = ANY(${ids})`;
         } catch (e) {
           const errorMessage = e instanceof Error ? e.message : String(e);
           stats.errors.push(`Verify error: ${errorMessage.substring(0, 60)}`);
@@ -369,17 +371,30 @@ export async function recalcProductAggregates(dryRun = false): Promise<void> {
   if (!dryRun) {
     await ensureDb();
     try {
+      // Exclude stale prices (last_verified > 30d or url_status >= 400)
+      // from the public-facing min_price / max_price / retailer_count.
+      // If a product has only stale prices left, min_price/max_price go NULL
+      // and the product falls out of most listings.
       await sql`
-        UPDATE cs_products p SET 
-          retailer_count = (SELECT COUNT(DISTINCT retailer) FROM cs_prices WHERE product_id = p.id),
-          min_price = COALESCE((
-            SELECT MIN(price) FROM cs_prices WHERE product_id = p.id 
-            AND (LOWER(source_name) LIKE '%single%' OR (LOWER(source_name) NOT LIKE '%box of%' AND LOWER(source_name) NOT LIKE '%pack of%' AND LOWER(source_name) NOT LIKE '%bundle of%' AND LOWER(source_name) NOT LIKE '%cabinet of%'))
-          ), p.min_price),
-          max_price = COALESCE((
+        UPDATE cs_products p SET
+          retailer_count = (
+            SELECT COUNT(DISTINCT retailer) FROM cs_prices
+            WHERE product_id = p.id
+              AND (last_verified IS NULL OR last_verified > NOW() - INTERVAL '30 days')
+              AND (url_status IS NULL OR url_status < 400)
+          ),
+          min_price = (
+            SELECT MIN(price) FROM cs_prices WHERE product_id = p.id
+              AND (last_verified IS NULL OR last_verified > NOW() - INTERVAL '30 days')
+              AND (url_status IS NULL OR url_status < 400)
+              AND (LOWER(source_name) LIKE '%single%' OR (LOWER(source_name) NOT LIKE '%box of%' AND LOWER(source_name) NOT LIKE '%pack of%' AND LOWER(source_name) NOT LIKE '%bundle of%' AND LOWER(source_name) NOT LIKE '%cabinet of%'))
+          ),
+          max_price = (
             SELECT MAX(price) FROM cs_prices WHERE product_id = p.id
-            AND (LOWER(source_name) LIKE '%single%' OR (LOWER(source_name) NOT LIKE '%box of%' AND LOWER(source_name) NOT LIKE '%pack of%' AND LOWER(source_name) NOT LIKE '%bundle of%' AND LOWER(source_name) NOT LIKE '%cabinet of%'))
-          ), p.max_price)
+              AND (last_verified IS NULL OR last_verified > NOW() - INTERVAL '30 days')
+              AND (url_status IS NULL OR url_status < 400)
+              AND (LOWER(source_name) LIKE '%single%' OR (LOWER(source_name) NOT LIKE '%box of%' AND LOWER(source_name) NOT LIKE '%pack of%' AND LOWER(source_name) NOT LIKE '%bundle of%' AND LOWER(source_name) NOT LIKE '%cabinet of%'))
+          )
       `;
     } catch (e) {
       console.error('Error recalculating aggregates:', e);

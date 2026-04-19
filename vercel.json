@@ -31,6 +31,10 @@
     {
       "path": "/api/admin/populate-dimensions?run=true&limit=2000",
       "schedule": "30 3 * * 1"
+    },
+    {
+      "path": "/api/admin/check-urls?limit=200&olderThanHours=48",
+      "schedule": "0 4 * * *"
     }
   ]
 }

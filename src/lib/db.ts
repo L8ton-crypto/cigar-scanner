@@ -100,8 +100,42 @@ export async function ensureDb() {
     )
   `;
   await db`
-    CREATE INDEX IF NOT EXISTS idx_cs_price_history_lookup 
+    CREATE INDEX IF NOT EXISTS idx_cs_price_history_lookup
       ON cs_price_history(product_id, retailer, recorded_at)
   `;
+
+  // Stale detection columns on cs_prices (task-51)
+  await db`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'cs_prices' AND column_name = 'last_verified'
+      ) THEN
+        ALTER TABLE cs_prices ADD COLUMN last_verified TIMESTAMP WITH TIME ZONE;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'cs_prices' AND column_name = 'url_status'
+      ) THEN
+        ALTER TABLE cs_prices ADD COLUMN url_status INTEGER;
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'cs_prices' AND column_name = 'url_checked_at'
+      ) THEN
+        ALTER TABLE cs_prices ADD COLUMN url_checked_at TIMESTAMP WITH TIME ZONE;
+      END IF;
+    END $$;
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_prices_last_verified
+      ON cs_prices(last_verified)
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_prices_url_checked_at
+      ON cs_prices(url_checked_at)
+  `;
+
   initialized = true;
 }
