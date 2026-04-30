@@ -137,5 +137,31 @@ export async function ensureDb() {
       ON cs_prices(url_checked_at)
   `;
 
+  // Sponsored listings (task-52). Manually managed via /api/admin/sponsored.
+  // Empty by default - feature stays invisible until admin inserts a row.
+  await db`
+    CREATE TABLE IF NOT EXISTS cs_sponsored (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL,
+      sponsor_name TEXT,
+      notes TEXT,
+      weight INTEGER NOT NULL DEFAULT 1,
+      active BOOLEAN NOT NULL DEFAULT true,
+      start_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      end_at TIMESTAMP WITH TIME ZONE,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    )
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_sponsored_product
+      ON cs_sponsored(product_id)
+  `;
+  await db`
+    CREATE INDEX IF NOT EXISTS idx_cs_sponsored_active
+      ON cs_sponsored(active, end_at)
+      WHERE active = true
+  `;
+
   initialized = true;
 }

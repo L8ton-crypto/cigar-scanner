@@ -107,3 +107,45 @@
 - Enhanced refresh system with fuzzy matching and safety limits  
 - Built comprehensive data health monitoring dashboard
 - Improved price change tracking with detailed statistics
+
+
+## Sponsored Listings (task-52, 2026-04-30)
+
+Manually managed monetisation hook. The feature is invisible until an admin
+inserts a row into `cs_sponsored` - intentional, so we never ship fake seed
+data and the UI stays unchanged for real users until a real sponsor exists.
+
+### Activation
+
+1. Confirm `CRON_SECRET` is set on Vercel (it is, used by other admin routes).
+2. Visit `/admin/sponsored` in a browser, paste the CRON_SECRET, add a row.
+3. Or hit the API directly:
+
+```
+curl -X POST https://cigar-scanner-app.vercel.app/api/admin/sponsored \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": 123, "sponsor_name": "Brand Co", "weight": 10}'
+```
+
+### Schema
+
+`cs_sponsored` (id, product_id, sponsor_name, notes, weight, active, start_at,
+end_at, created_at, updated_at). A row is "live" when active=true and within
+its start/end window. Index on (active, end_at) keeps the per-request lookup
+cheap.
+
+### Surfaces
+
+- Product card on the home grid: gold ribbon over the bottom of the image,
+  optional sponsor name on the right, subtle gold ring around the card.
+- Cigar detail page: gold pill below the brand line.
+
+### API
+
+- `GET    /api/admin/sponsored`              list rows (joined with product name)
+- `POST   /api/admin/sponsored`              create
+- `PATCH  /api/admin/sponsored/[id]`         update (active toggle, dates, etc.)
+- `DELETE /api/admin/sponsored/[id]`         hard delete
+
+All four require `Authorization: Bearer <CRON_SECRET>` or `?key=<CRON_SECRET>`.

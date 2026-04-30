@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getActiveSponsorship } from '@/lib/sponsored';
 import { calculatePricePerInch, parsePackCount } from '@/lib/cigar-dimensions';
 
 export async function GET(
@@ -97,10 +98,14 @@ export async function GET(
       }
     }
 
+    const sponsorship = await getActiveSponsorship(productId);
+
     return NextResponse.json({
       cigar: {
         ...product,
         best_price_per_inch: bestPricePerInch,
+        sponsored: !!sponsorship,
+        sponsor_name: sponsorship ? sponsorship.sponsor_name : null,
       },
       prices: pricesEnriched,
       related,

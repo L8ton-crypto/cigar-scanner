@@ -19,6 +19,8 @@ interface Cigar {
   strength?: string;
   format?: string;
   retailer_count: number;
+  sponsored?: boolean;
+  sponsor_name?: string | null;
 }
 
 interface FiltersState {

@@ -24,6 +24,8 @@ interface Product {
   max_price: number;
   retailer_count: number;
   best_price_per_inch?: number | null;
+  sponsored?: boolean;
+  sponsor_name?: string | null;
 }
 
 interface Price {
@@ -131,6 +133,18 @@ export default function CigarDetailPage() {
           {/* Info */}
           <div>
             <p className="text-[#c9a84c] text-lg font-medium mb-2">{product.brand}</p>
+
+            {product.sponsored && (
+              <div className="mb-3 inline-flex items-center gap-2 bg-[#c9a84c] text-[#0f2419] text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-md">
+                <span>Sponsored</span>
+                {product.sponsor_name && (
+                  <span className="font-medium normal-case text-[#0f2419]/80">
+                    by {product.sponsor_name}
+                  </span>
+                )}
+              </div>
+            )}
+
             
             <div className="flex items-start gap-3 mb-6">
               <h1 className="text-white text-4xl font-bold flex-1">{product.name}</h1>

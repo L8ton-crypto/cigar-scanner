@@ -15,6 +15,8 @@ interface Cigar {
   format?: string;
   retailer_count: number;
   recent_drop?: boolean;
+  sponsored?: boolean;
+  sponsor_name?: string | null;
 }
 
 interface Pagination {
@@ -47,7 +49,7 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
   const hasPriceRange = maxPrice > minPrice && cigar.retailer_count > 1;
 
   return (
-    <div className="cigar-card bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4">
+    <div className={`cigar-card bg-[#1a3a2a]/80 backdrop-blur rounded-xl p-4 ${cigar.sponsored ? 'ring-1 ring-[#c9a84c]/50' : ''}`}>
       {/* Image */}
       <div className="relative aspect-[3/4] mb-4 rounded-lg overflow-hidden bg-[#0a1a10]">
         {cigar.image_url ? (
@@ -79,6 +81,21 @@ function CigarCard({ cigar }: { cigar: Cigar }) {
         {cigar.retailer_count > 1 && (
           <div className="absolute top-2 right-2 bg-[#c9a84c] text-[#0f2419] text-xs font-bold px-2 py-1 rounded-full">
             {cigar.retailer_count} retailers
+          </div>
+        )}
+
+        {/* Sponsored ribbon (task-52). Only renders when an active row exists in cs_sponsored. */}
+        {cigar.sponsored && (
+          <div
+            className="absolute bottom-2 left-2 right-2 bg-[#c9a84c] text-[#0f2419] text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-md flex items-center justify-between gap-2 shadow"
+            title={cigar.sponsor_name ? `Sponsored by ${cigar.sponsor_name}` : 'Sponsored'}
+          >
+            <span>Sponsored</span>
+            {cigar.sponsor_name && (
+              <span className="font-medium normal-case truncate text-[10px]">
+                {cigar.sponsor_name}
+              </span>
+            )}
           </div>
         )}
       </div>

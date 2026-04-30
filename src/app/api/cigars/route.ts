@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sql, ensureDb } from '@/lib/db';
+import { getActiveSponsorshipMap } from '@/lib/sponsored';
 
 type SortKey = 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc' | 'retailers-desc' | 'savings-desc' | 'brand-asc';
 const validSorts: SortKey[] = ['price-asc', 'price-desc', 'name-asc', 'name-desc', 'retailers-desc', 'savings-desc', 'brand-asc'];
@@ -139,8 +140,19 @@ export async function GET(request: NextRequest) {
 
     const products = await fetchSorted(brand, strength, minPrice, maxPrice, searchTerm, sortKey, limit, offset);
 
+    // Decorate with sponsored flag (task-52). Empty by default - the lookup
+    // returns an empty Map until an admin inserts a row in cs_sponsored.
+    const productIds = (products as Array<{ id: number }>).map((p) => Number(p.id));
+    const sponsorshipMap = await getActiveSponsorshipMap(productIds);
+    const decorated = (products as Array<Record<string, unknown>>).map((p) => {
+      const info = sponsorshipMap.get(Number(p.id));
+      return info
+        ? { ...p, sponsored: true, sponsor_name: info.sponsor_name }
+        : { ...p, sponsored: false };
+    });
+
     return NextResponse.json({
-      cigars: products,
+      cigars: decorated,
       total,
       page,
       pages: Math.ceil(total / limit),
